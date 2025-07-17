@@ -1,0 +1,28 @@
+services:
+  gateway:
+    build:
+      context: ./Services/Gateway/Gateway.Api
+    ports:
+      - "5004:80"
+    depends_on:
+      - user-service
+      - quiz-service
+      - results-service
+
+  user-service:
+    build:
+      context: ./Services/UserService/UserService.Api
+    ports:
+      - "5001:80"
+
+  quiz-service:
+    build:
+      context: ./Services/QuizService/QuizService.Api
+    ports:
+      - "5002:80"
+
+  results-service:
+    build:
+      context: ./Services/ResultService/ResultService.Api
+    ports:
+      - "5003:80"
