@@ -5,32 +5,20 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "user-service",
-          "Port": 80
+          "Host": "localhost",
+          "Port": 5001
         }
       ],
       "UpstreamPathTemplate": "/api/users/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
     {
-      "DownstreamPathTemplate": "/api/users",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "user-service",
-          "Port": 80
-        }
-      ],
-      "UpstreamPathTemplate": "/api/users",
-      "UpstreamHttpMethod": [ "GET" ]
-    },
-    {
       "DownstreamPathTemplate": "/api/quizzes/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "quiz-service",
-          "Port": 80
+          "Host": "localhost",
+          "Port": 5002
         }
       ],
       "UpstreamPathTemplate": "/api/quizzes/{everything}",
@@ -41,8 +29,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "results-service",
-          "Port": 80
+          "Host": "localhost",
+          "Port": 5003
         }
       ],
       "UpstreamPathTemplate": "/api/results/{everything}",
@@ -50,6 +38,6 @@
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://gateway"
+    "BaseUrl": "http://localhost:5004"
   }
 }

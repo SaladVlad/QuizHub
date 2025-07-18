@@ -4,25 +4,104 @@ services:
       context: ./Services/Gateway/Gateway.Api
     ports:
       - "5004:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
     depends_on:
       - user-service
       - quiz-service
       - results-service
+    networks:
+      - quizhub-network
 
   user-service:
     build:
       context: ./Services/UserService/UserService.Api
-    ports:
-      - "5001:80"
+    # ports:
+    #   - "5001:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=user-db;Port=5432;Database=UserDb;Username=postgres;Password=yourpassword
+    depends_on:
+      - user-db
+    networks:
+      - quizhub-network
 
   quiz-service:
     build:
       context: ./Services/QuizService/QuizService.Api
-    ports:
-      - "5002:80"
+    # ports:
+    #   - "5002:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=quiz-db;Port=5432;Database=QuizDb;Username=postgres;Password=yourpassword
+    depends_on:
+      - quiz-db
+    networks:
+      - quizhub-network
 
   results-service:
     build:
       context: ./Services/ResultService/ResultService.Api
+    # ports:
+    #   - "5003:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=result-db;Port=5432;Database=ResultDb;Username=postgres;Password=yourpassword
+    depends_on:
+      - result-db
+    networks:
+      - quizhub-network
+
+  user-db:
+    image: postgres:15
+    container_name: user-db
+    environment:
+      POSTGRES_DB: UserDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
     ports:
-      - "5003:80"
+      - "5433:5432"
+    networks:
+      - quizhub-network
+
+  quiz-db:
+    image: postgres:15
+    container_name: quiz-db
+    environment:
+      POSTGRES_DB: QuizDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+    ports:
+      - "5434:5432"
+    networks:
+      - quizhub-network
+
+  result-db:
+    image: postgres:15
+    container_name: result-db
+    environment:
+      POSTGRES_DB: ResultDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+    ports:
+      - "5435:5432"
+    networks:
+      - quizhub-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - user-db
+      - quiz-db
+      - result-db
+    networks:
+      - quizhub-network
+
+networks:
+  quizhub-network:
+    driver: bridge

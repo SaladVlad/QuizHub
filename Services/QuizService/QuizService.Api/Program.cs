@@ -1,15 +1,31 @@
+using Microsoft.EntityFrameworkCore;
+using QuizService.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.WebHost.UseUrls("http://*:80");
+builder.Services.AddDbContext<QuizDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+
+// Conditionally set port 80 for production
+if (builder.Environment.IsProduction())
+{
+    builder.WebHost.UseUrls("http://*:80");
+}
 
 var app = builder.Build();
 
-// Middleware
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<QuizDbContext>();
+    db.Database.Migrate(); // Apply migrations
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
