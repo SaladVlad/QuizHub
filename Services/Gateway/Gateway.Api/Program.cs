@@ -1,25 +1,37 @@
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
-// 1. Add environment variables first
 builder.Configuration.AddEnvironmentVariables();
-
-// 2. Get current environment
 string environment = builder.Environment.EnvironmentName;
 
-// 3. Load environment-specific configuration
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile($"ocelot.{environment}.json", optional: false, reloadOnChange: true)
     .AddJsonFile("ocelot.json", optional: true, reloadOnChange: true);
 
-// 4. Configure Ocelot with validation
+
+builder.Services.AddAuthentication()
+    .AddJwtBearer("JwtBearer" ,options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
+
 builder.Services.AddOcelot(builder.Configuration);
 
 // 5. Set production port

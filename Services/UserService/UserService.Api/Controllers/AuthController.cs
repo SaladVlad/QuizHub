@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using UserService.Api.Dtos;
+using UserService.Api.Dtos.Requests;
 using UserService.Api.Services.AuthService;
+using UserService.Api.Services.UserService;
 using UserService.Api.Services.UserValidationService;
 using UserService.Api.Utils;
 
@@ -14,14 +15,18 @@ namespace UserService.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IUserService _userService;
     private readonly IConfiguration _configuration;
     private readonly IUserValidationService _validationService;
+    private readonly IJwtHelper _jwtHelper;
 
-    public AuthController(IAuthService authService, IConfiguration configuration, IUserValidationService validationService)
+    public AuthController(IAuthService authService, IConfiguration configuration, IUserValidationService validationService, IJwtHelper jwtHelper, IUserService userService)
     {
         _authService = authService;
         _configuration = configuration;
         _validationService = validationService;
+        _jwtHelper = jwtHelper;
+        _userService = userService;
     }
 
     [HttpPost("login")]
@@ -36,7 +41,7 @@ public class AuthController : ControllerBase
             if (user == null)
                 return Unauthorized("Invalid username or password");
 
-            var token = JwtHelper.GenerateJwt(user, _configuration["Jwt:Key"]);
+            var token = _jwtHelper.GenerateJwt(user, _configuration["Jwt:Key"]);
             return Ok(new { Token = token, User = user });
         }
         catch (ArgumentException ex)
@@ -53,7 +58,7 @@ public class AuthController : ControllerBase
             _validationService.ValidateRegisterRequest(request);
 
             var user = await _authService.RegisterAsync(request);
-            var token = JwtHelper.GenerateJwt(user, _configuration["Jwt:Key"]);
+            var token = _jwtHelper.GenerateJwt(user, _configuration["Jwt:Key"]);
             return Ok(new { Token = token, User = user });
         }
         catch (ArgumentException ex)
@@ -71,11 +76,15 @@ public class AuthController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("me")]
-    public IActionResult Me()
+    [HttpGet("currentUser")]
+    public async Task<IActionResult> CurrentUser()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Ok(userId);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized("User is not authenticated.");
+
+        var user = await _userService.GetById(new Guid(userId));
+        return Ok(user);
     }
 
     [HttpGet("test")]

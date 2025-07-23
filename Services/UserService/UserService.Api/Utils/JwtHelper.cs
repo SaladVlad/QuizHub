@@ -2,13 +2,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using UserService.Api.Dtos;
+using UserService.Api.Dtos.EntityDtos;
 
 
 namespace UserService.Api.Utils;
-public static class JwtHelper
+public class JwtHelper : IJwtHelper
 {
-    public static string GenerateJwt(UserDto user, string key, int expireMinutes = 60)
+    public string GenerateJwt(UserDto user, string key, int expireMinutes = 60)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var keyBytes = Encoding.ASCII.GetBytes(key);

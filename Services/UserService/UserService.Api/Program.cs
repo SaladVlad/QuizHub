@@ -4,7 +4,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using UserService.Api.Data;
 using UserService.Api.Services.AuthService;
+using UserService.Api.Services.UserService;
 using UserService.Api.Services.UserValidationService;
+using UserService.Api.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,12 +31,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddDbContext<UserDbContext>(options =>
    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
 /// Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserValidationService, UserValidationService>();
+builder.Services.AddScoped<IUserService, UserService.Api.Services.UserService.UserService>();
 builder.Services.AddScoped<IUserDbContext, UserDbContext>();
 
+//singleton instances
+builder.Services.AddSingleton<IJwtHelper,JwtHelper>();
+
+//port mapping
 if (builder.Environment.IsProduction())
 {
     builder.WebHost.UseUrls("http://*:80");
@@ -54,6 +60,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.Use(async (context, next) =>
+{
+    Console.WriteLine($"[USER SERVICE] Received {context.Request.Method} {context.Request.Path}");
+    await next();
+});
 
 app.UseRouting();
 app.UseAuthentication();

@@ -1,4 +1,5 @@
-﻿using UserService.Api.Dtos;
+﻿using UserService.Api.Dtos.EntityDtos;
+using UserService.Api.Dtos.Requests;
 
 namespace UserService.Api.Services.AuthService;
 

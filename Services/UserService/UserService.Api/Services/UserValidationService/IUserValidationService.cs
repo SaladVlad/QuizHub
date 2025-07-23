@@ -1,9 +1,10 @@
-﻿using UserService.Api.Dtos;
+﻿using UserService.Api.Dtos.Requests;
 
 namespace UserService.Api.Services.UserValidationService;
 
 public interface IUserValidationService
 {
-    void ValidateRegisterRequest(RegisterRequestDto request);
-    void ValidateLoginRequest(LoginRequestDto request);
+    ValidationResult ValidateRegisterRequest(RegisterRequestDto request);
+    ValidationResult ValidateLoginRequest(LoginRequestDto request);
+    ValidationResult ValidateUserUpdateRequest(UpdateUserRequestDto request);
 }

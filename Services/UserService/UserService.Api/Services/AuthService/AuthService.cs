@@ -3,7 +3,8 @@ using System.Security.Cryptography;
 using System.Text;
 using UserService.Api.Data;
 using UserService.Api.Domain.Entities;
-using UserService.Api.Dtos;
+using UserService.Api.Dtos.EntityDtos;
+using UserService.Api.Dtos.Requests;
 
 namespace UserService.Api.Services.AuthService;
 

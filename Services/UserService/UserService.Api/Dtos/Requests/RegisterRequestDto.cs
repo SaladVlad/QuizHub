@@ -1,4 +1,4 @@
-﻿namespace UserService.Api.Dtos
+﻿namespace UserService.Api.Dtos.Requests
 {
     public class RegisterRequestDto
     {

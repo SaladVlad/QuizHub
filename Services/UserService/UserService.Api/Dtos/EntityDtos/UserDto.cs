@@ -1,4 +1,4 @@
-namespace UserService.Api.Dtos
+namespace UserService.Api.Dtos.EntityDtos
 {
     public class UserDto
     {
@@ -6,5 +6,6 @@ namespace UserService.Api.Dtos
         public string Username { get; set; } = default!;
         public string Email { get; set; } = default!;
         public string Role { get; set; } = default!;
+        public byte[]? AvatarImage { get; set; }
     }
 }
