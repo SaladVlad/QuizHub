@@ -15,12 +15,12 @@ namespace ResultService.Api.Migrations
                 name: "Results",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    QuizId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Score = table.Column<int>(type: "integer", nullable: false),
-                    TimeTakenSeconds = table.Column<int>(type: "integer", nullable: false),
-                    CompletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    QuizId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Score = table.Column<int>(type: "int", nullable: false),
+                    TimeTakenSeconds = table.Column<int>(type: "int", nullable: false),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -31,10 +31,10 @@ namespace ResultService.Api.Migrations
                 name: "ResultAnswers",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ResultId = table.Column<Guid>(type: "uuid", nullable: false),
-                    QuestionId = table.Column<Guid>(type: "uuid", nullable: false),
-                    GivenAnswer = table.Column<string>(type: "text", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ResultId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    QuestionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GivenAnswer = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {

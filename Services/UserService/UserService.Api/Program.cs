@@ -29,7 +29,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
    });
 
 builder.Services.AddDbContext<UserDbContext>(options =>
-   options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+   options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 /// Register services
 builder.Services.AddScoped<IAuthService, AuthService>();

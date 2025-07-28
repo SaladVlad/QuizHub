@@ -15,10 +15,10 @@ namespace QuizService.Api.Migrations
                 name: "Questions",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    QuizId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Text = table.Column<string>(type: "text", nullable: false),
-                    QuestionType = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    QuizId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    QuestionType = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -29,13 +29,13 @@ namespace QuizService.Api.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Title = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    Category = table.Column<string>(type: "text", nullable: false),
-                    Difficulty = table.Column<int>(type: "integer", nullable: false),
-                    TimeLimitSeconds = table.Column<int>(type: "integer", nullable: false),
-                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Category = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Difficulty = table.Column<int>(type: "int", nullable: false),
+                    TimeLimitSeconds = table.Column<int>(type: "int", nullable: false),
+                    CreatedByUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -46,10 +46,10 @@ namespace QuizService.Api.Migrations
                 name: "Answers",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    QuestionId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Text = table.Column<string>(type: "text", nullable: false),
-                    IsCorrect = table.Column<bool>(type: "boolean", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    QuestionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsCorrect = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
