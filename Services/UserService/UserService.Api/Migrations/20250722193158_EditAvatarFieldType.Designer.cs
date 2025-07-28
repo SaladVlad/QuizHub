@@ -12,8 +12,8 @@ using UserService.Api.Data;
 namespace UserService.Api.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250718192200_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250722193158_EditAvatarFieldType")]
+    partial class EditAvatarFieldType
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,16 +31,21 @@ namespace UserService.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AvatarUrl")
-                        .HasColumnType("text");
+                    b.Property<byte[]>("AvatarImage")
+                        .IsRequired()
+                        .HasColumnType("bytea");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<byte[]>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("bytea");
+
+                    b.Property<byte[]>("PasswordSalt")
+                        .IsRequired()
+                        .HasColumnType("bytea");
 
                     b.Property<string>("Role")
                         .IsRequired()
