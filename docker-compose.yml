@@ -82,6 +82,18 @@ services:
     networks:
       - quizhub-network
 
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: react-client
+  #   ports:
+  #     - "3000:80"   # or use 80:80 if you want root access
+  #   depends_on:
+  #     - gateway
+  #   networks:
+  #     - quizhub-network
+
 networks:
   quizhub-network:
     driver: bridge

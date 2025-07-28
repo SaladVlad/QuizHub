@@ -32,6 +32,20 @@ builder.Services.AddAuthentication()
         };
     });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+        policy.WithOrigins("http://frontend:80")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+
 builder.Services.AddOcelot(builder.Configuration);
 
 // 5. Set production port
