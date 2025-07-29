@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using UserService.Api.Dtos.Requests;
 
 namespace UserService.Api.Services.UserValidationService;
@@ -46,10 +46,7 @@ public class UserValidationService : IUserValidationService
             if (!Regex.IsMatch(request.Password, @"[0-9]") || !Regex.IsMatch(request.Password, @"[!@#$%^&*(),.?""{}|<>]"))
                 result.Errors.Add("Password must contain at least one number and one special character.");
         }
-
-        if (request.AvatarImage == null || request.AvatarImage.Length == 0)
-            result.Errors.Add("Avatar image is required.");
-
+        
         result.IsValid = result.Errors.Count == 0;
         return result;
     }
@@ -65,8 +62,24 @@ public class UserValidationService : IUserValidationService
             return result;
         }
 
-        if (string.IsNullOrWhiteSpace(request.Username))
-            result.Errors.Add("Username is required.");
+        if (string.IsNullOrWhiteSpace(request.UsernameOrEmail))
+            result.Errors.Add("Username or email is required.");
+        else if (request.UsernameOrEmail.Contains("@"))
+        {
+            if (request.UsernameOrEmail.Length < 5)
+                result.Errors.Add("Email must be at least 5 characters long.");
+            if (request.UsernameOrEmail.Length > 256)
+                result.Errors.Add("Email cannot exceed 256 characters.");
+            if (!Regex.IsMatch(request.UsernameOrEmail, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                result.Errors.Add("Invalid email format.");
+        }
+        else
+        {
+            if (request.UsernameOrEmail.Length < 3)
+                result.Errors.Add("Username must be at least 3 characters long.");
+            if (request.UsernameOrEmail.Length > 50)
+                result.Errors.Add("Username cannot exceed 50 characters.");
+        }
 
         if (string.IsNullOrWhiteSpace(request.Password))
             result.Errors.Add("Password is required.");

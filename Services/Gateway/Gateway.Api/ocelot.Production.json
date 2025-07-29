@@ -1,6 +1,30 @@
 {
   "Routes": [
     {
+      "DownstreamPathTemplate": "/api/users/auth/login",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "user-service",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/api/users/auth/login",
+      "UpstreamHttpMethod": [ "POST" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/users/auth/register",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "user-service",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/api/users/auth/register",
+      "UpstreamHttpMethod": [ "POST", "OPTIONS" ]
+    },
+    {
       "DownstreamPathTemplate": "/api/users/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -10,7 +34,7 @@
         }
       ],
       "UpstreamPathTemplate": "/api/users/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "JwtBearer",
         "AllowedScopes": []
@@ -26,7 +50,7 @@
         }
       ],
       "UpstreamPathTemplate": "/api/quizzes/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "JwtBearer",
         "AllowedScopes": []
@@ -42,7 +66,7 @@
         }
       ],
       "UpstreamPathTemplate": "/api/results/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "JwtBearer",
         "AllowedScopes": []
@@ -50,6 +74,12 @@
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://gateway"
+    "BaseUrl": "http://gateway",
+    "CorsPolicy": {
+      "AllowMethods": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "AllowHeaders": [ "Authorization", "Content-Type", "Accept" ],
+      "AllowCredentials": true,
+      "AllowAnyOrigin": true
+    }
   }
 }

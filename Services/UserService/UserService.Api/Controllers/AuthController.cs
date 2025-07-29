@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UserService.Api.Dtos.Requests;
@@ -51,13 +51,18 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromForm] RegisterRequestDto request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Register([FromForm] RegisterRequestDto formRequest)
     {
         try
         {
-            _validationService.ValidateRegisterRequest(request);
+            if (formRequest == null)
+            {
+                return BadRequest("Invalid form data");
+            }
 
-            var user = await _authService.RegisterAsync(request);
+            _validationService.ValidateRegisterRequest(formRequest);
+            var user = await _authService.RegisterAsync(formRequest);
             var token = _jwtHelper.GenerateJwt(user, _configuration["Jwt:Key"]);
             return Ok(new { Token = token, User = user });
         }
@@ -69,9 +74,9 @@ public class AuthController : ControllerBase
         {
             return Conflict(ex.Message);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return StatusCode(500, "An unexpected error occurred.");
+            return StatusCode(500, $"An unexpected error occurred: {ex.Message}");
         }
     }
 

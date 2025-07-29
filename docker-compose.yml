@@ -55,6 +55,8 @@ services:
       MSSQL_PID: "Express"
     ports:
       - "1433:1433"
+    volumes:
+      - user-db-data:/var/opt/mssql
     networks:
       - quizhub-network
 
@@ -67,6 +69,8 @@ services:
       MSSQL_PID: "Express"
     ports:
       - "1434:1433"
+    volumes:
+      - quiz-db-data:/var/opt/mssql
     networks:
       - quizhub-network
 
@@ -79,6 +83,8 @@ services:
       MSSQL_PID: "Express"
     ports:
       - "1435:1433"
+    volumes:
+      - result-db-data:/var/opt/mssql
     networks:
       - quizhub-network
 
@@ -97,3 +103,8 @@ services:
 networks:
   quizhub-network:
     driver: bridge
+
+volumes:
+  user-db-data:
+  quiz-db-data:
+  result-db-data:
