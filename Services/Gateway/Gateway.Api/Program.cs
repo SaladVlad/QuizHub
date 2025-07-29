@@ -32,6 +32,23 @@ builder.Services.AddAuthentication()
         };
     });
 
+// Configure CORS to allow requests from the frontend
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:3000",  // Local development
+                "http://frontend:80",     // Docker network
+                "http://localhost:5004"   // Gateway URL for testing
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .WithExposedHeaders("Content-Disposition");
+    });
+});
+
 builder.Services.AddOcelot(builder.Configuration);
 
 // 5. Set production port
@@ -42,11 +59,21 @@ if (builder.Environment.IsProduction())
 
 var app = builder.Build();
 
+// Enable CORS before other middleware
+app.UseCors();
+
+// Add a simple health check endpoint
 app.MapGet("/", () => $"Gateway is running in {environment} environment");
 app.MapControllers();
 
 try
 {
+    // Use Ocelot with CORS enabled
+    app.UseRouting();
+    app.UseCors(); // Enable CORS for Ocelot routes
+    app.UseAuthentication();
+    app.UseAuthorization();
+    
     await app.UseOcelot();
     Console.WriteLine("Ocelot middleware initialized successfully");
 }

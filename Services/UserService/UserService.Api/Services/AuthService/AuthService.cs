@@ -21,7 +21,7 @@ public class AuthService : IAuthService
     public async Task<UserDto?> AuthenticateAsync(LoginRequestDto request)
     {
         var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Username == request.Username);
+            .FirstOrDefaultAsync(u => u.Username == request.UsernameOrEmail || u.Email == request.UsernameOrEmail);
 
         if (user == null || !VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
             return null;
@@ -42,9 +42,14 @@ public class AuthService : IAuthService
 
         CreatePasswordHash(request.Password, out byte[] hash, out byte[] salt);
 
-        using var memoryStream = new MemoryStream();
-        await request.AvatarImage.CopyToAsync(memoryStream);
-        var avatarBytes = memoryStream.ToArray();
+        byte[] avatarBytes = Array.Empty<byte>();
+
+        if (request.AvatarImage != null && request.AvatarImage.Length > 0)
+        {
+            using var memoryStream = new MemoryStream();
+            await request.AvatarImage.CopyToAsync(memoryStream);
+            avatarBytes = memoryStream.ToArray();
+        }
 
         var user = new User
         {
@@ -68,6 +73,7 @@ public class AuthService : IAuthService
             Role = user.Role
         };
     }
+
 
     private void CreatePasswordHash(string password, out byte[] hash, out byte[] salt)
     {
