@@ -30,25 +30,20 @@ const Profile: React.FC = () => {
   useEffect(() => {
     const fetchUser = async () => {
       if (!authUser) return;
-      if (
-        authUser.username &&
-        authUser.email &&
-        authUser.avatarImage !== undefined
-      ) {
-        setUser(authUser);
-        setFormData({ username: authUser.username, email: authUser.email });
-        if (authUser.avatarImage) {
-          setAvatarPreview(`data:image/png;base64,${authUser.avatarImage}`);
-        }
-        setLoading(false);
-        return;
-      }
       try {
         const fullUser = await getUserById(authUser.id, true);
         setUser(fullUser);
         setFormData({ username: fullUser.username, email: fullUser.email });
+
         if (fullUser.avatarImage) {
-          setAvatarPreview(`data:image/png;base64,${fullUser.avatarImage}`);
+          const isBase64 = fullUser.avatarImage.startsWith("data:");
+          setAvatarPreview(
+            isBase64
+              ? fullUser.avatarImage
+              : `data:image/png;base64,${fullUser.avatarImage}`
+          );
+        } else {
+          setAvatarPreview(null);
         }
       } catch (err: any) {
         setError(err.message || "Failed to load profile");
@@ -56,6 +51,7 @@ const Profile: React.FC = () => {
         setLoading(false);
       }
     };
+
     fetchUser();
   }, [authUser]);
 
@@ -154,7 +150,6 @@ const Profile: React.FC = () => {
 
       <div className="card">
         <div className="form-group">
-          <label>Profile Picture</label>
           <div className="avatar-upload">
             <input
               type="file"
@@ -162,31 +157,32 @@ const Profile: React.FC = () => {
               ref={fileInputRef}
               onChange={handleFileChange}
               disabled={!editing}
-              style={{ display: "none" }}
+              className="avatar-input"
+              id="avatarUpload"
             />
-            {avatarPreview ? (
-              <div className="avatar-preview">
-                <img src={avatarPreview} alt="Avatar" />
-                {editing && (
-                  <button
-                    type="button"
-                    className="remove-image"
-                    onClick={handleRemoveImage}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            ) : (
-              editing && (
-                <button
-                  type="button"
-                  className="upload-button"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Choose Image
-                </button>
-              )
+            <label
+              htmlFor="avatarUpload"
+              className={`avatar-preview-wrapper ${editing ? "clickable" : ""}`}
+            >
+              <img
+                src={avatarPreview || "/default-avatar.png"}
+                alt="Avatar"
+                className="profile-avatar"
+              />
+              {editing && (
+                <div className="avatar-overlay">
+                  <span>Change</span>
+                </div>
+              )}
+            </label>
+            {avatarPreview && editing && (
+              <button
+                type="button"
+                className="remove-image"
+                onClick={handleRemoveImage}
+              >
+                Remove
+              </button>
             )}
           </div>
         </div>

@@ -117,6 +117,10 @@ public class UserService : IUserService
             await request.AvatarImage.CopyToAsync(ms);
             user.AvatarImage = ms.ToArray();
         }
+        else
+        {
+            user.AvatarImage = null; // Clear the image if not provided
+        }
 
         await _context.SaveChangesAsync();
         return ServiceResult.Ok();
