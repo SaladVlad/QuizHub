@@ -30,6 +30,16 @@ const Profile: React.FC = () => {
   useEffect(() => {
     const fetchUser = async () => {
       if (!authUser) return;
+      // Check if authUser already has all required fields
+      if (authUser.username && authUser.email && authUser.avatarImage !== undefined) {
+        setUser(authUser);
+        setFormData({ username: authUser.username, email: authUser.email });
+        if (authUser.avatarImage) {
+          setAvatarPreview(`data:image/png;base64,${authUser.avatarImage}`);
+        }
+        setLoading(false);
+        return;
+      }
       try {
         const fullUser = await getUserById(authUser.id, true);
         setUser(fullUser);

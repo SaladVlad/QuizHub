@@ -139,3 +139,8 @@
     transform: translateY(-10px);
   }
 }
+
+/* Add this at the end or move to your global variables file */
+:root {
+  --color-primary-light: #e3f2fd; /* Example light color, adjust as needed */
+}

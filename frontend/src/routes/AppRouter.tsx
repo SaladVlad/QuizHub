@@ -31,7 +31,7 @@ const AppRouter = () => {
             <Route path="quizzes" element={<QuizList />} />
             <Route path="results" element={<Results />} />
             <Route path="leaderboard" element={<Leaderboard />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Route>
         )}
