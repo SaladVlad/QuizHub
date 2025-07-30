@@ -89,17 +89,16 @@ export const getUserByEmail = async (
 export const updateUser = async (
   userData: UpdateUserRequestDto
 ): Promise<string> => {
+  const formData = new FormData()
   if (!userData.userId || !userData.username || !userData.email) {
     throw new Error('User ID, username, and email are required fields.')
   }
-  const formData = new FormData()
-  formData.append('userId', userData.userId)
-  formData.append('username', userData.username)
-  formData.append('email', userData.email)
+  formData.append('userId', userData.userId!)
+  formData.append('username', userData.username!)
+  formData.append('email', userData.email!)
   if (userData.avatarImage) {
     formData.append('avatarImage', userData.avatarImage)
   }
-
   const response = await fetch(`${API_BASE_URL}/users/update`, {
     method: 'PUT',
     headers: {

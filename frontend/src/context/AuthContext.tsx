@@ -1,7 +1,7 @@
 // context/AuthContext.tsx
 import { createContext, useState, useEffect } from "react";
 import { ReactNode } from "react";
-import { UserDto } from "../models/AuthDtos";
+import { UserDto } from "../models/UserDtos";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const token = localStorage.getItem("jwt");
     const userData = localStorage.getItem("user");
-    
+
     if (token && userData) {
       try {
         const parsedUser = JSON.parse(userData);

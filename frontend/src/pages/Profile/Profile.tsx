@@ -30,7 +30,6 @@ const Profile: React.FC = () => {
   useEffect(() => {
     const fetchUser = async () => {
       if (!authUser) return;
-      // Check if authUser already has all required fields
       if (
         authUser.username &&
         authUser.email &&
