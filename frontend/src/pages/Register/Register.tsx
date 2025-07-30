@@ -9,7 +9,9 @@ const Register: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState<Omit<RegisterRequestDto, 'avatarImage'>>({
+  const [formData, setFormData] = useState<
+    Omit<RegisterRequestDto, "avatarImage">
+  >({
     username: "",
     email: "",
     password: "",
@@ -23,9 +25,9 @@ const Register: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -33,20 +35,20 @@ const Register: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       // Check file type
-      if (!file.type.startsWith('image/')) {
-        setError('Please upload an image file');
+      if (!file.type.startsWith("image/")) {
+        setError("Please upload an image file");
         return;
       }
-      
+
       // Check file size (max 5MB)
       if (file.size > 1 * 1024 * 1024) {
-        setError('Image size should be less than 1MB');
+        setError("Image size should be less than 1MB");
         return;
       }
-      
+
       setAvatarImage(file);
-      setError('');
-      
+      setError("");
+
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -55,28 +57,28 @@ const Register: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
-  
+
   const handleRemoveImage = () => {
     setAvatarImage(null);
     setAvatarPreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const { username, email, password, confirmPassword } = formData;
-    
+
     if (!username || !email || !password || !confirmPassword) {
       return setError("Please fill in all fields");
     }
-    
+
     if (password !== confirmPassword) {
       return setError("Passwords do not match");
     }
-    
+
     if (password.length < 6) {
       return setError("Password must be at least 6 characters long");
     }
@@ -84,15 +86,15 @@ const Register: React.FC = () => {
     try {
       setIsLoading(true);
       setError("");
-      
+
       const { token, user } = await registerUser({
         username,
         email,
         password,
         confirmPassword,
-        avatarImage: avatarImage || undefined
+        avatarImage: avatarImage || undefined,
       });
-      
+
       login(token, user);
       navigate("/");
     } catch (err: any) {
@@ -106,13 +108,9 @@ const Register: React.FC = () => {
     <div className="register-container">
       <form className="register-form" onSubmit={handleSubmit}>
         <h2>Create an Account</h2>
-        
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-        
+
+        {error && <div className="error-message">{error}</div>}
+
         <div className="form-group">
           <label htmlFor="username">Username</label>
           <input
@@ -126,7 +124,7 @@ const Register: React.FC = () => {
             disabled={isLoading}
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="email">Email Address</label>
           <input
@@ -140,7 +138,7 @@ const Register: React.FC = () => {
             disabled={isLoading}
           />
         </div>
-        
+
         <div className="form-group">
           <label>Profile Picture (Optional)</label>
           <div className="avatar-upload">
@@ -151,13 +149,13 @@ const Register: React.FC = () => {
               accept="image/*"
               onChange={handleFileChange}
               disabled={isLoading}
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
             />
             {avatarPreview ? (
               <div className="avatar-preview">
                 <img src={avatarPreview} alt="Avatar preview" />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="remove-image"
                   onClick={handleRemoveImage}
                   disabled={isLoading}
@@ -166,8 +164,8 @@ const Register: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="upload-button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
@@ -177,7 +175,7 @@ const Register: React.FC = () => {
             )}
           </div>
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="password">Password</label>
           <input
@@ -191,7 +189,7 @@ const Register: React.FC = () => {
             disabled={isLoading}
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="confirmPassword">Confirm Password</label>
           <input
@@ -205,18 +203,13 @@ const Register: React.FC = () => {
             disabled={isLoading}
           />
         </div>
-        
-        <button 
-          type="submit" 
-          className="submit-button"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Creating Account...' : 'Sign Up'}
+
+        <button type="submit" className="submit-button" disabled={isLoading}>
+          {isLoading ? "Creating Account..." : "Sign Up"}
         </button>
-        
+
         <div className="login-link">
-          Already have an account?{' '}
-          <Link to="/login">Sign In</Link>
+          Already have an account? <Link to="/login">Sign In</Link>
         </div>
       </form>
     </div>

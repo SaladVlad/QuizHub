@@ -1,11 +1,4 @@
-export interface UserDto {
-  id: string
-  username: string
-  email: string
-  role?: string
-  createdAt?: string
-  updatedAt?: string
-}
+import { UserDto } from './UserDtos'
 
 export interface LoginRequestDto {
   usernameOrEmail: string

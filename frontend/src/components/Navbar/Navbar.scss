@@ -1,0 +1,141 @@
+.navbar {
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 1rem 2rem;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  .navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .logo {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--color-primary);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+
+    li {
+      list-style: none;
+
+      a {
+        color: var(--text-primary);
+        font-weight: 500;
+
+        &:hover {
+          color: var(--color-primary-dark);
+        }
+      }
+    }
+  }
+
+  .profile-dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--color-primary);
+      transition: box-shadow 0.2s ease;
+
+      &:hover {
+        box-shadow: 0 0 8px var(--color-primary-dark);
+      }
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 48px;
+      right: 0;
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      min-width: 160px;
+      display: flex;
+      flex-direction: column;
+      padding: 0.5rem 0;
+      z-index: 200;
+      opacity: 0;
+      transform: translateY(-10px);
+      animation: dropdownFadeIn 0.1s forwards ease-out;
+
+        &.opening {
+            animation: dropdownFadeIn 100ms forwards ease-out;
+            pointer-events: auto;
+        }
+
+        &.closing {
+            animation: dropdownFadeOut 100ms forwards ease-in;
+            pointer-events: none;
+        }
+
+      a,
+      button {
+        padding: 0.6rem 1.2rem;
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-align: left;
+        width: 100%;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+        user-select: none;
+
+        &:hover {
+          background-color: var(--color-primary-light);
+          color: var(--color-primary-dark);
+        }
+      }
+
+      button {
+        color: #d93025;
+        font-weight: 700;
+
+        &:hover {
+          background-color: #fce8e6;
+          color: #a52714;
+        }
+      }
+    }
+  }
+
+  .logout-btn {
+    margin-left: 1.5rem;
+  }
+}
+
+@keyframes dropdownFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdownFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
