@@ -41,7 +41,8 @@ public class AuthController : ControllerBase
             if (user == null)
                 return Unauthorized("Invalid username or password");
 
-            var token = _jwtHelper.GenerateJwt(user, _configuration["Jwt:Key"]);
+            var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured");
+            var token = _jwtHelper.GenerateJwt(user, jwtKey);
             return Ok(new { Token = token, User = user });
         }
         catch (ArgumentException ex)
@@ -63,7 +64,8 @@ public class AuthController : ControllerBase
 
             _validationService.ValidateRegisterRequest(formRequest);
             var user = await _authService.RegisterAsync(formRequest);
-            var token = _jwtHelper.GenerateJwt(user, _configuration["Jwt:Key"]);
+            var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured");
+            var token = _jwtHelper.GenerateJwt(user, jwtKey);
             return Ok(new { Token = token, User = user });
         }
         catch (ArgumentException ex)
@@ -93,7 +95,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("test")]
-    public async Task<IActionResult> Test()
+    public IActionResult Test()
     {
         return Ok("Test endpoint for user auth service is working!");
     }
