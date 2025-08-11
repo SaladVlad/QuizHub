@@ -4,6 +4,7 @@ using QuizService.Api.Dtos.Requests;
 using QuizService.Api.Dtos.Responses;
 using QuizService.Api.Dtos.Results;
 using QuizService.Api.Services;
+using System.Security.Claims;
 
 namespace QuizService.Api.Controllers;
 
@@ -26,6 +27,18 @@ public class QuizzesController : ControllerBase
     public async Task<IActionResult> GetQuizById(Guid id)
     {
         var result = await _quizService.GetQuizByIdAsync(id);
+        if (!result.Success)
+        {
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        }
+        return Ok(result.Data);
+    }
+    
+    [HttpGet("{id}/with-questions")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetQuizWithQuestions(Guid id)
+    {
+        var result = await _quizService.GetQuizWithQuestionsAsync(id);
         if (!result.Success)
         {
             return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
@@ -87,7 +100,7 @@ public class QuizzesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Teacher")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateQuiz(Guid id, [FromBody] CreateQuizRequestDto updateQuizDto)
     {
         if (!ModelState.IsValid)
@@ -110,7 +123,7 @@ public class QuizzesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin,Teacher")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteQuiz(Guid id)
     {
         var userId = GetCurrentUserId();
@@ -129,7 +142,10 @@ public class QuizzesController : ControllerBase
 
     private Guid GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst("userId")?.Value;
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+                         User.FindFirst("sub")?.Value ??
+                         User.FindFirst("userId")?.Value;
+
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
             _logger.LogWarning("Invalid or missing user ID in token");

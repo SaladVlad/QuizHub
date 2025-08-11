@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using ResultService.Api.Data;
 using ResultService.Api.Dtos.Responses;
 using ResultService.Api.Dtos.Results;
+using ResultService.Api.Services.UserService;
+using ResultService.Api.Dtos.User;
 
-namespace ResultService.Api.Services;
+namespace ResultService.Api.Services.LeaderboardService;
 
 public class LeaderboardService : ILeaderboardService
 {
@@ -27,23 +29,33 @@ public class LeaderboardService : ILeaderboardService
         {
             if (top < 1 || top > 1000) top = 100;
 
-            // Get the top results across all quizzes
-            var topResults = await _context.Results
-                .GroupBy(r => r.UserId)
-                .Select(g => new
-                {
-                    UserId = g.Key,
-                    BestScore = g.Max(r => r.Score),
-                    BestTime = g.Where(r => r.Score == g.Max(r2 => r2.Score))
-                              .Min(r => r.TimeTakenSeconds),
-                    LastCompleted = g.Max(r => r.CompletedAt)
-                })
-                .OrderByDescending(x => x.BestScore)
-                .ThenBy(x => x.BestTime)
-                .Take(top)
-                .ToListAsync();
+            // Get all results
+            var allResults = await _context.Results.ToListAsync();
 
-            // Map to DTO
+            // Group by user and quiz, then take the best score for each quiz
+            var bestScoresPerQuiz = allResults
+                .GroupBy(r => new { r.UserId, r.QuizId })
+                .Select(g => g.OrderByDescending(r => r.Score)
+                             .ThenBy(r => r.TimeTakenSeconds)
+                             .First())
+                .ToList();
+
+            // Calculate total score per user by summing their best scores from each quiz
+            var userTotalScores = bestScoresPerQuiz
+                .GroupBy(r => r.UserId)
+                .Select(g => new {
+                    UserId = g.Key,
+                    TotalScore = g.Sum(r => r.Score),
+                    // For display purposes, we'll use the most recent completion time
+                    LastCompleted = g.Max(r => r.CompletedAt),
+                    // Count of unique quizzes taken
+                    QuizzesTaken = g.Count()
+                })
+                .OrderByDescending(x => x.TotalScore)
+                .ThenBy(x => x.LastCompleted) // In case of tie, earlier completion ranks higher
+                .Take(top)
+                .ToList();
+
             var leaderboard = new QuizLeaderboardDto
             {
                 QuizId = Guid.Empty,
@@ -51,19 +63,27 @@ public class LeaderboardService : ILeaderboardService
                 Entries = new List<LeaderboardEntryDto>()
             };
 
-            // Get user names (in a real app, this would be a batch call to UserService)
+            // Get all user IDs to fetch in batch
+            var userIds = userTotalScores.Select(x => x.UserId).ToList();
+            var users = await _userServiceClient.GetUsersBatchAsync(userIds);
+            
             var rank = 1;
-            foreach (var result in topResults)
+            foreach (var userScore in userTotalScores)
             {
-                var userName = await GetUserNameAsync(result.UserId) ?? "Unknown User";
+                // Try to get user details from the batch, fall back to just the ID if not found
+                var user = users.GetValueOrDefault(userScore.UserId);
+                var userName = user?.DisplayName ?? $"User {userScore.UserId.ToString().Substring(0, 8)}";
+                
                 leaderboard.Entries.Add(new LeaderboardEntryDto
                 {
                     Rank = rank++,
-                    UserId = result.UserId,
+                    UserId = userScore.UserId,
                     UserName = userName,
-                    Score = result.BestScore,
-                    TimeTakenSeconds = result.BestTime,
-                    CompletedAt = result.LastCompleted
+                    UserEmail = user?.Email,
+                    Score = userScore.TotalScore,
+                    // For global leaderboard, time taken doesn't make sense, so we'll show quizzes taken
+                    TimeTakenSeconds = userScore.QuizzesTaken,
+                    CompletedAt = userScore.LastCompleted
                 });
             }
 
@@ -81,25 +101,25 @@ public class LeaderboardService : ILeaderboardService
         try
         {
             if (top < 1 || top > 1000) top = 100;
-
-            // Get the top results for the specified quiz
-            var topResults = await _context.Results
+            
+            // Get all results for this quiz
+            var quizResults = await _context.Results
                 .Where(r => r.QuizId == quizId)
-                .GroupBy(r => r.UserId)
-                .Select(g => new
-                {
-                    UserId = g.Key,
-                    BestScore = g.Max(r => r.Score),
-                    BestTime = g.Where(r => r.Score == g.Max(r2 => r2.Score))
-                              .Min(r => r.TimeTakenSeconds),
-                    LastCompleted = g.Max(r => r.CompletedAt)
-                })
-                .OrderByDescending(x => x.BestScore)
-                .ThenBy(x => x.BestTime)
-                .Take(top)
                 .ToListAsync();
 
-            // Map to DTO
+            // Get the best score per user for this quiz
+            var bestScores = quizResults
+                .GroupBy(r => r.UserId)
+                .Select(g => g.OrderByDescending(r => r.Score)
+                            .ThenBy(r => r.TimeTakenSeconds)
+                            .ThenBy(r => r.CompletedAt)
+                            .First())
+                .OrderByDescending(r => r.Score)
+                .ThenBy(r => r.TimeTakenSeconds)
+                .ThenBy(r => r.CompletedAt)
+                .Take(top)
+                .ToList();
+
             var leaderboard = new QuizLeaderboardDto
             {
                 QuizId = quizId,
@@ -107,19 +127,26 @@ public class LeaderboardService : ILeaderboardService
                 Entries = new List<LeaderboardEntryDto>()
             };
 
-            // Get user names (in a real app, this would be a batch call to UserService)
+            // Get all user IDs to fetch in batch
+            var userIds = bestScores.Select(r => r.UserId).ToList();
+            var users = await _userServiceClient.GetUsersBatchAsync(userIds);
+            
             var rank = 1;
-            foreach (var result in topResults)
+            foreach (var best in bestScores)
             {
-                var userName = await GetUserNameAsync(result.UserId) ?? "Unknown User";
+                // Try to get user details from the batch, fall back to just the ID if not found
+                var user = users.GetValueOrDefault(best.UserId);
+                var userName = user?.DisplayName ?? $"User {best.UserId.ToString().Substring(0, 8)}";
+                
                 leaderboard.Entries.Add(new LeaderboardEntryDto
                 {
                     Rank = rank++,
-                    UserId = result.UserId,
+                    UserId = best.UserId,
                     UserName = userName,
-                    Score = result.BestScore,
-                    TimeTakenSeconds = result.BestTime,
-                    CompletedAt = result.LastCompleted
+                    UserEmail = user?.Email,
+                    Score = best.Score,
+                    TimeTakenSeconds = best.TimeTakenSeconds,
+                    CompletedAt = best.CompletedAt
                 });
             }
 
@@ -137,9 +164,6 @@ public class LeaderboardService : ILeaderboardService
         try
         {
             if (top < 1 || top > 100) top = 100;
-
-            // In a real implementation, we would query the QuizService to get quizzes by category
-            // For now, we'll return a not implemented response
             return Task.FromResult(ServiceResult<List<QuizLeaderboardDto>>.FailureResult("Leaderboard by category is not implemented yet", 501));
         }
         catch (Exception ex)
@@ -149,27 +173,12 @@ public class LeaderboardService : ILeaderboardService
         }
     }
 
-    private async Task<string?> GetUserNameAsync(Guid userId)
-    {
-        try
-        {
-            // This would typically call the UserService to get the user's name
-            // For now, we'll return a placeholder
-            return await Task.FromResult($"User {userId.ToString().Substring(0, 8)}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving user name for {UserId}", userId);
-            return null;
-        }
-    }
+    // GetUserNameAsync method has been removed as we now use IUserServiceClient
 
     private async Task<string?> GetQuizTitleAsync(Guid quizId)
     {
         try
         {
-            // This would typically call the QuizService to get the quiz title
-            // For now, we'll return a placeholder
             return await Task.FromResult($"Quiz {quizId.ToString().Substring(0, 8)}");
         }
         catch (Exception ex)

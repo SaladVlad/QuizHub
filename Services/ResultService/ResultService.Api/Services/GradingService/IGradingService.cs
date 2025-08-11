@@ -1,7 +1,7 @@
 using ResultService.Api.Domain.Entities;
 using ResultService.Api.Dtos.Requests;
 
-namespace ResultService.Api.Services;
+namespace ResultService.Api.Services.GradingService;
 
 public interface IGradingService
 {

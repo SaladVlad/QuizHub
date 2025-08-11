@@ -14,9 +14,9 @@ public class Question
     public Guid QuizId { get; set; }
     public required string Text { get; set; }
     public QuestionType QuestionType { get; set; }
-    public int Points { get; set; } = 1; // Default points for the question
-    public bool IsCaseSensitive { get; set; } // For FillIn questions
-    public string? Explanation { get; set; } // Optional explanation for the answer
-    public int Order { get; set; } // Order of the question in the quiz
+    public int Points { get; set; } = 1;
+    public bool IsCaseSensitive { get; set; }
+    public string? Explanation { get; set; }
+    public int Order { get; set; }
     public required ICollection<Answer> Answers { get; set; } = new List<Answer>();
 }

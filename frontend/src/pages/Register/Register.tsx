@@ -2,7 +2,7 @@ import React, { useState, useRef, ChangeEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { registerUser } from "../../services/authService";
-import { RegisterRequestDto } from "../../models/AuthDtos";
+import { RegisterRequestDto } from "../../dtos/auth";
 import "./Register.scss";
 
 const Register: React.FC = () => {
@@ -210,6 +210,9 @@ const Register: React.FC = () => {
 
         <div className="login-link">
           Already have an account? <Link to="/login">Sign In</Link>
+        </div>
+        <div className="back-home">
+          <Link to="/">↩ Back to Home</Link>
         </div>
       </form>
     </div>

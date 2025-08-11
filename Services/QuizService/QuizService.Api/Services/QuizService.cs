@@ -42,6 +42,56 @@ public class QuizService : IQuizService
         }
     }
 
+    public async Task<ServiceResult<QuizWithQuestionsDto>> GetQuizWithQuestionsAsync(Guid id)
+    {
+        try
+        {
+            var quiz = await _context.Quizzes
+                .Include(q => q.Questions)
+                    .ThenInclude(q => q.Answers)
+                .FirstOrDefaultAsync(q => q.Id == id);
+
+            if (quiz == null)
+            {
+                return ServiceResult<QuizWithQuestionsDto>.FailureResult("Quiz not found", 404);
+            }
+
+            var result = new QuizWithQuestionsDto
+            {
+                Id = quiz.Id,
+                Title = quiz.Title,
+                Description = quiz.Description,
+                Category = quiz.Category,
+                Difficulty = quiz.Difficulty,
+                TimeLimitSeconds = quiz.TimeLimitSeconds,
+                CreatedByUserId = quiz.CreatedByUserId,
+                Questions = quiz.Questions.Select(q => new QuestionDto
+                {
+                    Id = q.Id,
+                    Text = q.Text,
+                    QuestionType = q.QuestionType,
+                    Points = q.Points,
+                    IsCaseSensitive = q.IsCaseSensitive,
+                    Explanation = q.Explanation,
+                    Order = q.Order,
+                    Answers = q.Answers.Select(a => new AnswerDto
+                    {
+                        Id = a.Id,
+                        Text = a.Text,
+                        IsCorrect = a.IsCorrect
+                    }).ToList()
+                }).ToList()
+            };
+
+            return ServiceResult<QuizWithQuestionsDto>.SuccessResult(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving quiz with questions for ID {QuizId}", id);
+            return ServiceResult<QuizWithQuestionsDto>.FailureResult("An error occurred while retrieving the quiz with questions", 500);
+        }
+    }
+
     public async Task<ServiceResult<List<QuizResponseDto>>> GetAllQuizzesAsync(int page = 1, int pageSize = 10)
     {
         try
@@ -103,7 +153,7 @@ public class QuizService : IQuizService
                 Questions = new List<Question>()
             };
 
-            foreach (var questionDto in createQuizDto.Questions)
+            foreach (var questionDto in (createQuizDto.Questions ?? Enumerable.Empty<CreateQuestionRequestDto>()))
             {
                 var question = new Question
                 {
@@ -111,7 +161,7 @@ public class QuizService : IQuizService
                     QuizId = quiz.Id,
                     Text = questionDto.Text,
                     QuestionType = (QuestionType)questionDto.QuestionType,
-                    Answers = questionDto.Answers.Select(a => new Answer
+                    Answers = (questionDto.Answers ?? Enumerable.Empty<CreateAnswerRequestDto>()).Select(a => new Answer
                     {
                         Id = Guid.NewGuid(),
                         Text = a.Text,
@@ -136,11 +186,13 @@ public class QuizService : IQuizService
 
     public async Task<ServiceResult> UpdateQuizAsync(Guid id, CreateQuizRequestDto updateQuizDto, Guid userId)
     {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        
         try
         {
+            // First, get the quiz with tracking disabled to avoid concurrency issues
             var quiz = await _context.Quizzes
-                .Include(q => q.Questions)
-                .ThenInclude(q => q.Answers)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(q => q.Id == id);
 
             if (quiz == null)
@@ -153,41 +205,63 @@ public class QuizService : IQuizService
                 return ServiceResult.FailureResult("You are not authorized to update this quiz", 403);
             }
 
-            // Update quiz properties
+            // Update the existing quiz properties
             quiz.Title = updateQuizDto.Title;
             quiz.Description = updateQuizDto.Description;
             quiz.Category = updateQuizDto.Category;
             quiz.Difficulty = (Difficulty)updateQuizDto.Difficulty;
             quiz.TimeLimitSeconds = updateQuizDto.TimeLimitSeconds;
 
-            // Remove existing questions and answers
-            _context.Questions.RemoveRange(quiz.Questions);
-            quiz.Questions.Clear();
+            // Mark the entity as modified
+            _context.Quizzes.Update(quiz);
 
-            // Add updated questions and answers
-            foreach (var questionDto in updateQuizDto.Questions)
+            // Remove existing questions and answers in a separate query to avoid tracking issues
+            var existingQuestions = await _context.Questions
+                .Where(q => q.QuizId == id)
+                .Include(q => q.Answers)
+                .ToListAsync();
+
+            if (existingQuestions.Any())
             {
-                var question = new Question
+                _context.Answers.RemoveRange(existingQuestions.SelectMany(q => q.Answers));
+                _context.Questions.RemoveRange(existingQuestions);
+                await _context.SaveChangesAsync();
+            }
+
+            // Add new questions and answers
+            if (updateQuizDto.Questions != null && updateQuizDto.Questions.Any())
+            {
+                var newQuestions = updateQuizDto.Questions.Select(questionDto => new Question
                 {
                     Id = Guid.NewGuid(),
-                    QuizId = quiz.Id,
+                    QuizId = id,
                     Text = questionDto.Text,
                     QuestionType = (QuestionType)questionDto.QuestionType,
-                    Answers = questionDto.Answers.Select(a => new Answer
+                    Answers = questionDto.Answers?.Select(a => new Answer
                     {
                         Id = Guid.NewGuid(),
                         Text = a.Text,
                         IsCorrect = a.IsCorrect
                     }).ToList()
-                };
-                quiz.Questions.Add(question);
+                }).ToList();
+
+                await _context.Questions.AddRangeAsync(newQuestions);
             }
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            
             return ServiceResult.SuccessResult();
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Concurrency error while updating quiz with ID {QuizId}", id);
+            return ServiceResult.FailureResult("The quiz was modified by another user. Please refresh and try again.", 409);
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
             _logger.LogError(ex, "Error updating quiz with ID {QuizId}", id);
             return ServiceResult.FailureResult("An error occurred while updating the quiz", 500);
         }

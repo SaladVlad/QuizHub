@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ResultService.Api.Common;
@@ -6,7 +7,7 @@ using ResultService.Api.Dtos.Requests;
 using ResultService.Api.Dtos.Responses;
 using ResultService.Api.Options;
 
-namespace ResultService.Api.Services;
+namespace ResultService.Api.Services.GradingService;
 
 public class GradingService : IGradingService
 {
@@ -41,17 +42,83 @@ public class GradingService : IGradingService
             }
 
             var content = await response.Content.ReadAsStringAsync();
-            var quizResponse = JsonSerializer.Deserialize<ServiceResult<QuizWithQuestionsDto>>(
-                content,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            _logger.LogInformation("[GradingService] QuizService raw response length={Length}, preview={Preview}",
+                content?.Length ?? 0,
+                content == null ? string.Empty : content.Substring(0, Math.Min(500, content.Length)));
 
-            if (quizResponse == null || !quizResponse.Success || quizResponse.Data == null)
+            if (string.IsNullOrWhiteSpace(content))
             {
-                result.ErrorMessage = "Failed to deserialize quiz details";
+                result.ErrorMessage = "QuizService returned empty response";
+                _logger.LogWarning("[GradingService] Empty response content from QuizService");
                 return result;
             }
 
-            var quiz = quizResponse.Data;
+            // Be lenient: handle either wrapped { success, data } or a plain quiz object
+            QuizWithQuestionsDto? quiz = null;
+            string? deserializationBranch = null;
+            try
+            {
+                using var doc = JsonDocument.Parse(content);
+                var root = doc.RootElement;
+
+                // Case A: wrapped response with success + data
+                if (root.TryGetProperty("success", out var successElement))
+                {
+                    if (!successElement.GetBoolean())
+                    {
+                        result.ErrorMessage = "Failed to retrieve quiz details";
+                        return result;
+                    }
+
+                    if (root.TryGetProperty("data", out var dataElement))
+                    {
+                        var optNum = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                        var optStr = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                        optStr.Converters.Add(new JsonStringEnumConverter());
+                        quiz = dataElement.Deserialize<QuizWithQuestionsDto>(optNum)
+                               ?? dataElement.Deserialize<QuizWithQuestionsDto>(optStr);
+                        deserializationBranch = "wrapped_success_data";
+                    }
+                }
+
+                // Case B: wrapped without success flag, but has data property
+                if (quiz == null && root.TryGetProperty("data", out var dataOnlyElement))
+                {
+                    var optNum = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var optStr = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    optStr.Converters.Add(new JsonStringEnumConverter());
+                    quiz = dataOnlyElement.Deserialize<QuizWithQuestionsDto>(optNum)
+                           ?? dataOnlyElement.Deserialize<QuizWithQuestionsDto>(optStr);
+                    if (quiz != null) deserializationBranch = "wrapped_data_only";
+                }
+
+                // Case C: plain quiz object
+                if (quiz == null)
+                {
+                    var optNum = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var optStr = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    optStr.Converters.Add(new JsonStringEnumConverter());
+                    quiz = JsonSerializer.Deserialize<QuizWithQuestionsDto>(content, optNum)
+                           ?? JsonSerializer.Deserialize<QuizWithQuestionsDto>(content, optStr);
+                    if (quiz != null) deserializationBranch = "plain_object";
+                }
+            }
+            catch (JsonException)
+            {
+                // Fall through to null check below
+                _logger.LogWarning("[GradingService] JsonException while parsing QuizService response");
+            }
+
+            if (quiz == null)
+            {
+                result.ErrorMessage = "Failed to deserialize quiz details";
+                _logger.LogWarning("[GradingService] Deserialization failed. Branch={Branch}", deserializationBranch ?? "none");
+                return result;
+            }
+            else
+            {
+                _logger.LogInformation("[GradingService] Deserialization succeeded via branch={Branch}. Questions={Questions}", deserializationBranch, quiz.Questions?.Count);
+            }
 
             // Grade each question
             if (quiz.Questions != null)
@@ -98,13 +165,13 @@ public class GradingService : IGradingService
             return gradedQuestion;
         }
 
-        var gradedQuestionResult = question.Type switch
+        var gradedQuestionResult = question.QuestionType switch
         {
             QuestionType.SingleChoice => GradeSingleChoiceQuestion(question, userAnswer),
             QuestionType.MultipleChoice => GradeMultipleChoiceQuestion(question, userAnswer),
             QuestionType.TrueFalse => GradeTrueFalseQuestion(question, userAnswer),
             QuestionType.FillInTheBlank => GradeFillInTheBlankQuestion(question, userAnswer),
-            _ => throw new ArgumentOutOfRangeException(nameof(question.Type), $"Unsupported question type: {question.Type}")
+            _ => throw new ArgumentOutOfRangeException(nameof(question.QuestionType), $"Unsupported question type: {question.QuestionType}")
         };
 
         // Ensure we don't award more points than the question is worth

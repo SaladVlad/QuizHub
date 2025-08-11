@@ -30,6 +30,7 @@ public class LeaderboardEntryDto
     public int Rank { get; set; }
     public Guid UserId { get; set; }
     public string UserName { get; set; } = string.Empty;
+    public string? UserEmail { get; set; }
     public float Score { get; set; }
     public int TimeTakenSeconds { get; set; }
     public DateTime CompletedAt { get; set; }

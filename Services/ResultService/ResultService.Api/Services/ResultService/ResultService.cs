@@ -5,25 +5,23 @@ using ResultService.Api.Domain.Entities;
 using ResultService.Api.Dtos.Requests;
 using ResultService.Api.Dtos.Responses;
 using ResultService.Api.Dtos.Results;
+using ResultService.Api.Services.GradingService;
 
-namespace ResultService.Api.Services;
+namespace ResultService.Api.Services.ResultService;
 
 public class ResultService : IResultService
 {
     private readonly ResultDbContext _context;
     private readonly ILogger<ResultService> _logger;
-    private readonly IUserServiceClient _userServiceClient;
     private readonly IGradingService _gradingService;
 
     public ResultService(
-        ResultDbContext context, 
+        ResultDbContext context,
         ILogger<ResultService> logger,
-        IUserServiceClient userServiceClient,
         IGradingService gradingService)
     {
         _context = context;
         _logger = logger;
-        _userServiceClient = userServiceClient;
         _gradingService = gradingService;
     }
 
@@ -31,14 +29,19 @@ public class ResultService : IResultService
     {
         try
         {
+            _logger.LogInformation("[ResultService] SubmitQuizResultAsync: Start. UserId={UserId}, QuizId={QuizId}, TimeTakenSeconds={Time}, AnswersCount={Count}, Score={Score}",
+                userId, submitResultDto.QuizId, submitResultDto.TimeTakenSeconds, submitResultDto.Answers?.Count, submitResultDto.Score);
+
             // Validate the request
             if (submitResultDto.Answers == null || !submitResultDto.Answers.Any())
             {
+                _logger.LogWarning("[ResultService] Validation failed: No answers provided");
                 return ServiceResult<ResultResponseDto>.FailureResult("No answers provided", 400);
             }
 
             if (submitResultDto.TimeTakenSeconds <= 0)
             {
+                _logger.LogWarning("[ResultService] Validation failed: Invalid time taken {Time}", submitResultDto.TimeTakenSeconds);
                 return ServiceResult<ResultResponseDto>.FailureResult("Invalid time taken", 400);
             }
 
@@ -46,12 +49,25 @@ public class ResultService : IResultService
             var gradingResult = await _gradingService.GradeQuizAttemptAsync(submitResultDto);
             if (!gradingResult.Success)
             {
+                _logger.LogWarning("[ResultService] Grading failed: {Message}", gradingResult.ErrorMessage);
                 return ServiceResult<ResultResponseDto>.FailureResult(
                     $"Failed to grade quiz: {gradingResult.ErrorMessage}", 400);
             }
 
+            // Validate that the score is not higher than max possible score
+            if (gradingResult.TotalScore > gradingResult.MaxPossibleScore)
+            {
+                _logger.LogWarning("[ResultService] Invalid score: {Score} > {MaxScore}", 
+                    gradingResult.TotalScore, gradingResult.MaxPossibleScore);
+                return ServiceResult<ResultResponseDto>.FailureResult(
+                    "Invalid score: Score cannot be greater than maximum possible score", 400);
+            }
+
+            _logger.LogInformation("[ResultService] Grading succeeded: TotalScore={Total}, MaxPossibleScore={Max}, Questions={Q}",
+                gradingResult.TotalScore, gradingResult.MaxPossibleScore, gradingResult.GradedQuestions?.Count);
+
             // Create a new result
-            var result = new Domain.Entities.Result
+            var result = new Result
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
@@ -65,19 +81,21 @@ public class ResultService : IResultService
                     Id = Guid.NewGuid(),
                     QuestionId = a.QuestionId,
                     GivenAnswer = a.GivenAnswer,
-                    PointsAwarded = gradingResult.GradedQuestions
+                    PointsAwarded = gradingResult.GradedQuestions?
                         .FirstOrDefault(gq => gq.QuestionId == a.QuestionId)?.PointsAwarded ?? 0,
-                    IsCorrect = gradingResult.GradedQuestions
+                    IsCorrect = gradingResult.GradedQuestions?
                         .FirstOrDefault(gq => gq.QuestionId == a.QuestionId)?.IsCorrect ?? false
                 }).ToList()
             };
 
             // Save the result
             await _context.Results.AddAsync(result);
+            _logger.LogInformation("[ResultService] Persisting result: ResultId={ResultId}, AnswersSaved={Count}", result.Id, result.ResultAnswers.Count);
             await _context.SaveChangesAsync();
 
             // Map to DTO and return
             var resultDto = MapToResultResponse(result);
+            _logger.LogInformation("[ResultService] SubmitQuizResultAsync: Success. ResultId={ResultId}", resultDto.Id);
             return ServiceResult<ResultResponseDto>.SuccessResult(resultDto, 201);
         }
         catch (Exception ex)
@@ -237,7 +255,7 @@ public class ResultService : IResultService
         }
     }
 
-    private static ResultResponseDto MapToResultResponse(Domain.Entities.Result result)
+    private static ResultResponseDto MapToResultResponse(Result result)
     {
         return new ResultResponseDto
         {
@@ -245,13 +263,16 @@ public class ResultService : IResultService
             UserId = result.UserId,
             QuizId = result.QuizId,
             Score = result.Score,
+            MaxPossibleScore = result.MaxPossibleScore,
             TimeTakenSeconds = result.TimeTakenSeconds,
             CompletedAt = result.CompletedAt,
             Answers = result.ResultAnswers?.Select(a => new ResultAnswerResponseDto
             {
                 Id = a.Id,
                 QuestionId = a.QuestionId,
-                GivenAnswer = a.GivenAnswer
+                GivenAnswer = a.GivenAnswer,
+                PointsAwarded = a.PointsAwarded,
+                IsCorrect = a.IsCorrect
             }).ToList() ?? new List<ResultAnswerResponseDto>()
         };
     }

@@ -51,7 +51,6 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddOcelot(builder.Configuration);
 
-// 5. Set production port
 if (builder.Environment.IsProduction())
 {
     builder.WebHost.UseUrls("http://*:80");
@@ -59,18 +58,13 @@ if (builder.Environment.IsProduction())
 
 var app = builder.Build();
 
-// Enable CORS before other middleware
-app.UseCors();
-
-// Add a simple health check endpoint
 app.MapGet("/", () => $"Gateway is running in {environment} environment");
 app.MapControllers();
 
 try
 {
-    // Use Ocelot with CORS enabled
     app.UseRouting();
-    app.UseCors(); // Enable CORS for Ocelot routes
+    app.UseCors();
     app.UseAuthentication();
     app.UseAuthorization();
     

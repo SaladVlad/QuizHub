@@ -5,8 +5,9 @@ import {
   updateUser,
   resetPassword,
 } from "../../services/userService";
-import { ResetPasswordRequestDto, UserDto } from "../../models/UserDtos";
+import { ResetPasswordRequestDto, UserDto } from "../../dtos/user";
 import "./Profile.scss";
+import Loading from "../../components/Loading/Loading";
 
 const Profile: React.FC = () => {
   const { user: authUser } = useAuth();
@@ -134,12 +135,13 @@ const Profile: React.FC = () => {
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="container">
-        <p>Loading profile...</p>
+      <div className="profile-container">
+        <Loading />
       </div>
     );
+  }
 
   return (
     <div className="container profile">

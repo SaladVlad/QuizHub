@@ -1,35 +1,9 @@
 import { API_BASE_URL } from '../api'
-import {
-  LoginResponseDto,
-  RegisterRequestDto,
-  ApiError
-} from '../models/AuthDtos'
-import { UserDto } from '../models/UserDtos'
+import { LoginResponseDto, RegisterRequestDto } from '../dtos/auth'
+import { UserDto } from '../dtos/user'
+import { handleApiError } from '../utils/http'
 
-const handleApiError = async (response: Response): Promise<never> => {
-  let errorData: ApiError = { message: 'An unexpected error occurred' }
-
-  try {
-    const data = await response.json()
-    if (data && typeof data === 'object') {
-      errorData = {
-        message: data.message || 'Request failed',
-        errors: data.errors
-      }
-    }
-  } catch (e) {
-    // If we can't parse the error response, use the status text
-    errorData.message = response.statusText || 'Network error'
-  }
-
-  const error = new Error(errorData.message) as Error & ApiError
-  error.status = response.status
-  if (errorData.errors) {
-    error.errors = errorData.errors
-  }
-
-  throw error
-}
+ 
 
 export const loginUser = async (
   usernameOrEmail: string,
@@ -56,7 +30,6 @@ export const loginUser = async (
       user: data.user
     }
   } catch (error) {
-    console.error('Login error:', error)
     throw error
   }
 }

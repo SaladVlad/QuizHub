@@ -2,7 +2,7 @@ using ResultService.Api.Dtos.Requests;
 using ResultService.Api.Dtos.Responses;
 using ResultService.Api.Dtos.Results;
 
-namespace ResultService.Api.Services;
+namespace ResultService.Api.Services.ResultService;
 
 public interface IResultService
 {

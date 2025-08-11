@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ResultService.Api.Dtos.Requests;
-using ResultService.Api.Dtos.Responses;
-using ResultService.Api.Dtos.Results;
-using ResultService.Api.Services;
-
+using ResultService.Api.Services.LeaderboardService;
+using ResultService.Api.Services.ResultService;
+using System.Text;
 namespace ResultService.Api.Controllers;
 
 [ApiController]
@@ -29,8 +28,31 @@ public class ResultsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> SubmitResult([FromBody] SubmitResultRequestDto submitResultDto)
     {
+        _logger.LogInformation("[ResultsController] SubmitResult called. ModelState.IsValid={IsValid}", ModelState.IsValid);
+
+        if (submitResultDto == null)
+        {
+            _logger.LogWarning("[ResultsController] SubmitResult received null body. Content-Type={ContentType}", Request?.ContentType);
+            return BadRequest(new { message = "Request body was null or malformed JSON" });
+        }
+
         if (!ModelState.IsValid)
         {
+            // Log ModelState validation errors for diagnostics
+            var sb = new StringBuilder();
+            foreach (var kvp in ModelState)
+            {
+                var key = kvp.Key;
+                var errors = kvp.Value?.Errors;
+                if (errors != null && errors.Count > 0)
+                {
+                    foreach (var err in errors)
+                    {
+                        sb.AppendLine($"Key='{key}', Error='{err.ErrorMessage}'");
+                    }
+                }
+            }
+            _logger.LogWarning("[ResultsController] Invalid ModelState on SubmitResult. Errors:\n{Errors}", sb.ToString());
             return BadRequest(ModelState);
         }
 
@@ -40,11 +62,27 @@ public class ResultsController : ControllerBase
             return Unauthorized();
         }
 
+        // Log a concise summary of the incoming DTO (no PII)
+        try
+        {
+            _logger.LogInformation(
+                "[ResultsController] Submitting result. UserId={UserId}, QuizId={QuizId}, TimeTakenSeconds={TimeTakenSeconds}, AnswersCount={AnswersCount}, Score={Score}",
+                userId,
+                submitResultDto?.QuizId,
+                submitResultDto?.TimeTakenSeconds,
+                submitResultDto?.Answers?.Count,
+                submitResultDto?.Score
+            );
+        }
+        catch { }
+
         var result = await _resultService.SubmitQuizResultAsync(submitResultDto, userId);
         if (!result.Success)
         {
+            _logger.LogWarning("[ResultsController] SubmitResult failed. StatusCode={StatusCode}, Message={Message}", result.StatusCode, result.ErrorMessage);
             return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
         }
+        _logger.LogInformation("[ResultsController] SubmitResult succeeded. ResultId={ResultId}", result.Data?.Id);
         return CreatedAtAction(nameof(GetResult), new { id = result.Data?.Id }, result.Data);
     }
 
@@ -92,7 +130,6 @@ public class ResultsController : ControllerBase
     }
 
     [HttpGet("quiz/{quizId}")]
-    [AllowAnonymous]
     public async Task<IActionResult> GetQuizResults(Guid quizId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         if (page < 1) page = 1;
@@ -173,10 +210,14 @@ public class ResultsController : ControllerBase
 
     private Guid GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst("userId")?.Value;
+        // Try different claim types that might contain the user ID
+        var userIdClaim = User.FindFirst("userId")?.Value ??
+                         User.FindFirst("sub")?.Value ??
+                         User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                         
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            _logger.LogWarning("Invalid or missing user ID in token");
+            _logger.LogWarning("Invalid or missing user ID in token. Available claims: {Claims}",                 string.Join(", ", User.Claims.Select(c => $"{c.Type}: {c.Value}")));
             return Guid.Empty;
         }
         return userId;
@@ -186,9 +227,7 @@ public class ResultsController : ControllerBase
     {
         try
         {
-            // In a real implementation, this would check the user's roles
-            // For now, we'll return false
-            return await Task.FromResult(false);
+            return await Task.FromResult(User.IsInRole("Admin"));
         }
         catch (Exception ex)
         {

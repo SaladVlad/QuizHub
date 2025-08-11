@@ -5,6 +5,29 @@
 }
 
 html,
+/* Reset button styles */
+button, input[type="button"], input[type="submit"], input[type="reset"], .button {
+  all: unset;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  box-sizing: border-box;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+}
+
+/* Remove default focus outline but keep it for keyboard navigation */
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
 body {
   font-family: "Inter", sans-serif;
   background-color: #f4f4f6;
@@ -54,6 +77,18 @@ button {
 
   --shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  /* Landing page specific */
+  --landing-overlay: rgba(0, 0, 0, 0.35);
+  --landing-heading: #ffffff;
+  --landing-text: #eef2ff;
+  --landing-gap: 1rem;
+  --landing-min-height: 100vh;
+  --landing-anim-max-width: 900px; /* max width of the animated rect */
+  --landing-anim-height: 420px; /* default height on large screens */
+  --landing-rect-bg: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --landing-rect-border: rgba(255, 255, 255, 0.4);
+  --landing-rect-shadow: var(--shadow-md);
 }
 
 .container {
@@ -92,6 +127,23 @@ button {
 .btn-disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.back-home {
+  margin-top: 0.75rem;
+  text-align: center;
+}
+.back-home a {
+  color: var(--color-secondary);
+  font-weight: 500;
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+.back-home a:hover {
+  color: var(--color-secondary-dark);
+  text-decoration: underline;
+}
+.back-home a:active {
+  transform: translateY(1px);
 }
 
 input,

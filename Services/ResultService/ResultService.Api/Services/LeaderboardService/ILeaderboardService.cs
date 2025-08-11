@@ -1,7 +1,7 @@
 using ResultService.Api.Dtos.Responses;
 using ResultService.Api.Dtos.Results;
 
-namespace ResultService.Api.Services;
+namespace ResultService.Api.Services.LeaderboardService;
 
 public interface ILeaderboardService
 {

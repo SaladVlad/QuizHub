@@ -77,6 +77,9 @@ const Login: React.FC = () => {
         <div className="register-link">
           Don't have an account? <Link to="/register">Create one</Link>
         </div>
+        <div className="back-home">
+          <Link to="/">↩ Back to Home</Link>
+        </div>
       </form>
     </div>
   );

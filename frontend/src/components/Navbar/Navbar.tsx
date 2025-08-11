@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { getUserById } from "../../services/userService";
+import { isAdmin } from "../../utils/auth";
 import "./Navbar.scss";
 
 const Navbar: React.FC = () => {
@@ -29,7 +30,6 @@ const Navbar: React.FC = () => {
     }
   };
 
-  // 🔄 Fetch user with avatar image
   useEffect(() => {
     const fetchFullUser = async () => {
       if (authUser?.id) {
@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
             setAvatarImage(`data:image/png;base64,${fullUser.avatarImage}`);
           }
         } catch (err) {
-          console.error("Failed to fetch full user:", err);
+          /* no-op */
         }
       }
     };
@@ -49,10 +49,8 @@ const Navbar: React.FC = () => {
     }
   }, [isAuthenticated, authUser]);
 
-  // ⛑️ Fallback to default image if nothing is loaded
   const avatarSrc = avatarImage || "/default-avatar.png";
 
-  // ⛔ Close on outside click
   useEffect(() => {
     if (!dropdownOpen) return;
 
@@ -91,6 +89,11 @@ const Navbar: React.FC = () => {
           <li>
             <Link to="/leaderboard">Leaderboard</Link>
           </li>
+          {isAuthenticated && isAdmin(authUser) && (
+            <li>
+              <Link to="/admin/quizzes/new">Create Quiz</Link>
+            </li>
+          )}
         </ul>
         {isAuthenticated && (
           <div className="profile-dropdown" ref={dropdownRef}>
