@@ -4,7 +4,14 @@
   box-sizing: border-box;
 }
 
-html,
+html, body, #root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
 /* Reset button styles */
 button, input[type="button"], input[type="submit"], input[type="reset"], .button {
   all: unset;
@@ -32,8 +39,11 @@ body {
   font-family: "Inter", sans-serif;
   background-color: #f4f4f6;
   color: #1f2937;
-  height: 100%;
+  min-height: 100vh;
+  width: 100%;
   line-height: 1.6;
+  margin: 0;
+  padding: 0;
 }
 
 a {
@@ -50,33 +60,79 @@ button {
 }
 
 :root {
+  /* Color Variables */
+  --color-primary: #4a6bff;
+  --color-primary-rgb: 74, 107, 255;
+  --color-primary-light: #7d9bff;
+  --color-primary-dark: #3a5ae8;
+  --color-secondary: #3b82f6;
+  --color-secondary-dark: #2563eb;
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-danger: #dc3545;
+  
+  /* Background Colors */
   --color-background: #f4f4f6;
   --color-surface: #ffffff;
-  --bg-light: #f4f4f6;
+  --bg-light: #f8f9fa;
   --bg-card: #ffffff;
   --input-bg: #ffffff;
   --disabled-bg: #f3f4f6;
 
-  --color-primary: #6366f1;
-  --color-primary-dark: #4f46e5;
-  --color-secondary: #3b82f6;
-  --color-secondary-dark: #2563eb;
-  --accent: #6366f1;
-  --accent-hover: #4f46e5;
-
-  --color-grey: #6b7280;
+  /* Text Colors */
   --text-primary: #1f2937;
   --text-secondary: #4b5563;
-  --text-muted: #9ca3af;
+  --text-muted: #6c757d;
+  --text-light: #f8f9fa;
+  --text-dark: #212529;
 
-  --error-bg: #fee2e2;
-  --error-text: #b91c1c;
+  /* Status Colors */
+  --success-bg: #d4edda;
+  --success-text: #155724;
+  --warning-bg: #fff3cd;
+  --warning-text: #856404;
+  --error-bg: #f8d7da;
+  --error-text: #721c24;
+  --info-bg: #d1ecf1;
+  --info-text: #0c5460;
 
-  --color-border: #e5e7eb;
-  --radius: 0.5rem;
+  /* Border & Shadows */
+  --color-border: #e9ecef;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-inset: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
 
-  --shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  /* Transitions */
+  --transition-base: all 0.2s ease-in-out;
+  --transition-slow: all 0.35s ease;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
+
+  /* Z-index */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+  
+  /* Breakpoints */
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-xxl: 1400px;
 
   /* Landing page specific */
   --landing-overlay: rgba(0, 0, 0, 0.35);
@@ -84,8 +140,8 @@ button {
   --landing-text: #eef2ff;
   --landing-gap: 1rem;
   --landing-min-height: 100vh;
-  --landing-anim-max-width: 900px; /* max width of the animated rect */
-  --landing-anim-height: 420px; /* default height on large screens */
+  --landing-anim-max-width: 900px;
+  --landing-anim-height: 420px;
   --landing-rect-bg: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   --landing-rect-border: rgba(255, 255, 255, 0.4);
   --landing-rect-shadow: var(--shadow-md);

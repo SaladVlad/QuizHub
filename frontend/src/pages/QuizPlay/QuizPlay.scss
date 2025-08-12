@@ -1,5 +1,25 @@
 @use '../../styles/variables' as *;
 
+:root {
+  --color-surface: #ffffff;
+  --color-surface-variant: #f8f9fa;
+  --color-border: #e9ecef;
+  --color-border-hover: #dee2e6;
+  --color-primary: #4361ee;
+  --color-primary-rgb: 67, 97, 238;
+  --color-primary-light: #eef2ff;
+  --color-primary-dark: #3730a3;
+  --text-primary: #1a1a1a;
+  --text-secondary: #495057;
+  --text-tertiary: #6c757d;
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --warning-color: #f59e0b;
+  --box-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --box-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --transition-base: all 0.2s ease-in-out;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -30,13 +50,19 @@
   .quiz-play-header {
     text-align: center;
     margin-bottom: 2rem;
-    padding: 1.5rem;
+    padding: 2rem;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: 12px;
+    box-shadow: var(--box-shadow-sm);
+    transition: var(--transition-base);
+    
+    &:hover {
+      box-shadow: var(--box-shadow-md);
+    }
 
     h1 {
-      color: $primary-color;
+      color: var(--color-primary);
       margin: 0 0 1rem;
       font-size: 2rem;
       font-weight: 700;
@@ -44,14 +70,14 @@
 
     .quiz-progress {
       height: 8px;
-      background-color: $light-bg;
+      background-color: var(--color-surface-variant);
       border-radius: 4px;
       margin-bottom: 1.5rem;
       overflow: hidden;
 
       .progress-bar {
         height: 100%;
-        background: linear-gradient(90deg, $primary-color, lighten($primary-color, 15%));
+        background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 15%, white));
         border-radius: 4px;
         transition: width 0.3s ease;
       }
@@ -60,14 +86,14 @@
 
   .quiz-pre-start {
     background: var(--color-surface);
-    padding: 2rem;
-    border-radius: 8px;
+    padding: 2.5rem;
+    border-radius: 12px;
     border: 1px solid var(--color-border);
     max-width: 800px;
     margin: 2rem auto;
     text-align: center;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: var(--transition-base);
+    box-shadow: var(--box-shadow-sm);
 
     &:hover {
       border-color: var(--color-border-hover);
@@ -75,58 +101,118 @@
     }
 
     .quiz-description {
-      color: $text-muted;
+      color: var(--text-secondary);
       font-size: 1.1rem;
-      margin-bottom: 1.5rem;
-      line-height: 1.6;
+      margin: 1.5rem 0 2rem;
+      line-height: 1.7;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .quiz-meta {
       list-style: none;
       padding: 0;
       display: flex;
+      flex-wrap: wrap;
       justify-content: center;
-      gap: 2rem;
-      margin: 2rem 0;
+      gap: 1.5rem 2.5rem;
+      margin: 2.5rem 0 3rem;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
 
       li {
-        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        font-size: 1rem;
+        color: var(--text-secondary);
+        background: var(--color-surface-variant);
+        padding: 0.5rem 1.25rem;
+        border-radius: 50px;
+        box-shadow: var(--box-shadow-sm);
+        transition: var(--transition-base);
+        
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
 
         strong {
-          color: $primary-color;
+          color: var(--color-primary);
           font-weight: 600;
           margin-right: 0.5rem;
         }
       }
     }
+  }
 
-    .quiz-start-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.75rem 2rem;
-      margin: 0.5rem;
-      border: 2px solid $primary-color;
-      border-radius: 50px;
-      background: $primary-color;
+  .quiz-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    transition: var(--transition-base);
+    margin: 0.5rem;
+    min-width: 120px;
+    
+    &-primary {
+      background-color: var(--color-primary);
       color: white;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      min-width: 180px;
-
-      &:hover {
-        background: darken($primary-color, 10%);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba($primary-color, 0.2);
+      
+      &:hover:not(:disabled) {
+        background-color: var(--color-primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       }
-
-      &:active {
+      
+      &:active:not(:disabled) {
         transform: translateY(0);
-        box-shadow: 0 2px 6px rgba($primary-color, 0.2);
+      }
+      
+      &:disabled {
+        background-color: color-mix(in srgb, var(--color-primary) 40%, white);
+        cursor: not-allowed;
+        opacity: 0.7;
       }
     }
+    
+    &-outline {
+      background-color: transparent;
+      border: 1px solid var(--color-primary);
+      color: var(--color-primary);
+      
+      &:hover:not(:disabled) {
+        background-color: rgba(var(--color-primary-rgb), 0.1);
+        transform: translateY(-1px);
+      }
+      
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+      
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+    
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+  }
   }
 
   .quiz-timer {
@@ -312,11 +398,10 @@
         .stat-value {
           font-size: 1.75rem;
           font-weight: 700;
-          color: $primary-color;
+          color: var(--color-primary);
         }
       }
     }
-  }
 
   @keyframes pulse {
     0% {

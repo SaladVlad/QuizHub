@@ -1,11 +1,66 @@
-@use "../../index.css" as *;
-@use '../../styles/variables' as *;
+@use "../../styles/variables" as *;
 
 .results {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  
+  .progress-graph {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--color-border);
+    
+    h2 {
+      font-size: 1.5rem;
+      margin: 0 0 1.5rem 0;
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+    
+    .chart-container {
+      margin-top: 1.5rem;
+      height: 300px;
+      
+      .recharts-cartesian-axis-tick {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      
+      .recharts-legend-item {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+      
+      .recharts-tooltip {
+        background: var(--color-surface) !important;
+        border: 1px solid var(--color-border) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        padding: 0.75rem !important;
+        font-size: 0.9rem;
+        
+        .recharts-tooltip-label {
+          color: var(--text-primary);
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+          display: block;
+        }
+        
+        .recharts-tooltip-item {
+          color: var(--text-secondary);
+          
+          span {
+            color: var(--color-primary);
+            font-weight: 600;
+          }
+        }
+      }
+    }
+  }
 
   h1 {
     font-size: 2.25rem;
@@ -74,6 +129,50 @@
           border-color: rgba(var(--color-primary-rgb), 0.2);
         }
 
+        .score-display {
+          font-size: 1.75rem;
+          font-weight: 700;
+          color: var(--color-primary);
+          margin: 0.5rem 0;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          
+          .score-value {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+          }
+          
+          .high-score-badge {
+            font-size: 0.8rem;
+            background: linear-gradient(135deg, #ffd700, #ffa500);
+            color: #000;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+          }
+        }
+        
+        .date-display {
+          font-size: 0.95rem;
+          color: var(--text-secondary);
+          margin: 0.25rem 0 1rem 0;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          
+          &::before {
+            content: '📅';
+            font-size: 1rem;
+          }
+        }
+        
         p {
           margin: 0.25rem 0;
           color: var(--text-secondary);

@@ -27,8 +27,12 @@ export interface ResultDto {
 
 export interface LeaderboardEntryDto {
   rank: number
+  userId: string
   username: string
+  userEmail?: string
   score: number
+  timeTakenSeconds: number
+  completedAt: string
 }
 
 export interface UserStatsDto {

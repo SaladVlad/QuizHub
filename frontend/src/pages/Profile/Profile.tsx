@@ -144,115 +144,146 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div className="container profile">
+    <div className="profile">
       <h1>My Profile</h1>
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
+      {error && <div className="message error-message">{error}</div>}
+      {success && <div className="message success-message">{success}</div>}
 
       <div className="card">
-        <div className="form-group">
-          <div className="avatar-upload">
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              disabled={!editing}
-              className="avatar-input"
-              id="avatarUpload"
+        <div className="avatar-upload">
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            disabled={!editing}
+            className="avatar-input"
+            id="avatarUpload"
+          />
+          <label
+            htmlFor="avatarUpload"
+            className="avatar-preview-wrapper"
+            style={{ cursor: editing ? 'pointer' : 'default' }}
+          >
+            <img
+              src={avatarPreview || "/default-avatar.png"}
+              alt="Profile"
+              className="profile-avatar"
             />
-            <label
-              htmlFor="avatarUpload"
-              className={`avatar-preview-wrapper ${editing ? "clickable" : ""}`}
+            {editing && <div className="avatar-overlay">Change</div>}
+          </label>
+          
+          {avatarPreview && editing && (
+            <button
+              type="button"
+              className="remove-image"
+              onClick={handleRemoveImage}
             >
-              <img
-                src={avatarPreview || "/default-avatar.png"}
-                alt="Avatar"
-                className="profile-avatar"
-              />
-              {editing && (
-                <div className="avatar-overlay">
-                  <span>Change</span>
-                </div>
-              )}
-            </label>
-            {avatarPreview && editing && (
-              <button
-                type="button"
-                className="remove-image"
-                onClick={handleRemoveImage}
-              >
-                Remove
-              </button>
-            )}
-          </div>
+              Remove Photo
+            </button>
+          )}
         </div>
 
         <div className="form-group">
-          <label>Username</label>
+          <label htmlFor="username">Username</label>
           <input
+            id="username"
             type="text"
             name="username"
             value={formData.username}
             disabled={!editing}
             onChange={handleChange}
+            placeholder="Enter your username"
           />
         </div>
 
         <div className="form-group">
-          <label>Email</label>
+          <label htmlFor="email">Email</label>
           <input
+            id="email"
             type="email"
             name="email"
             value={formData.email}
             disabled={!editing}
             onChange={handleChange}
+            placeholder="Enter your email"
           />
         </div>
 
-        {editing ? (
-          <button className="btn btn-primary mt-4" onClick={handleProfileSave}>
-            Save Changes
-          </button>
-        ) : (
-          <button className="btn btn-secondary mt-4" onClick={handleEditToggle}>
-            Edit Profile
-          </button>
-        )}
-      </div>
+        <div className="actions">
+          {!editing ? (
+            <button 
+              className="primary" 
+              onClick={handleEditToggle}
+            >
+              Edit Profile
+            </button>
+          ) : (
+            <>
+              <button 
+                className="primary" 
+                onClick={handleProfileSave}
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button 
+                className="secondary" 
+                onClick={() => setEditing(false)}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
 
-      <div className="card mt-4">
-        <h2>Reset Password</h2>
-        <div className="form-group">
-          <label>New Password</label>
-          <input
-            type="password"
-            value={passwordData.newPassword}
-            onChange={(e) =>
-              setPasswordData((prev) => ({
-                ...prev,
-                newPassword: e.target.value,
-              }))
-            }
-          />
+        <div className="password-section">
+          <h2>Change Password</h2>
+          <div className="form-group">
+            <label htmlFor="newPassword">New Password</label>
+            <input
+              id="newPassword"
+              type="password"
+              value={passwordData.newPassword}
+              onChange={(e) =>
+                setPasswordData({
+                  ...passwordData,
+                  newPassword: e.target.value,
+                })
+              }
+              placeholder="Enter new password"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={passwordData.confirmPassword}
+              onChange={(e) =>
+                setPasswordData({
+                  ...passwordData,
+                  confirmPassword: e.target.value,
+                })
+              }
+              placeholder="Confirm new password"
+            />
+          </div>
+          <div className="actions">
+            <button
+              className="primary"
+              onClick={handlePasswordReset}
+              disabled={
+                !passwordData.newPassword ||
+                passwordData.newPassword !== passwordData.confirmPassword
+              }
+            >
+              Change Password
+            </button>
+          </div>
         </div>
-        <div className="form-group">
-          <label>Confirm Password</label>
-          <input
-            type="password"
-            value={passwordData.confirmPassword}
-            onChange={(e) =>
-              setPasswordData((prev) => ({
-                ...prev,
-                confirmPassword: e.target.value,
-              }))
-            }
-          />
-        </div>
-        <button className="btn btn-primary mt-4" onClick={handlePasswordReset}>
-          Change Password
-        </button>
       </div>
     </div>
   );
