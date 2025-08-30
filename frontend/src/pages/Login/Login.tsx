@@ -11,20 +11,81 @@ const Login: React.FC = () => {
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'usernameOrEmail':
+        if (!value.trim()) return 'Username or email is required';
+        if (value.length < 3) return 'Must be at least 3 characters';
+        // Check if it looks like an email
+        if (value.includes('@')) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) return 'Please enter a valid email address';
+        }
+        return '';
+      
+      case 'password':
+        if (!value) return 'Password is required';
+        if (value.length < 6) return 'Password must be at least 6 characters';
+        return '';
+      
+      default:
+        return '';
+    }
+  };
+
+  const handleUsernameOrEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsernameOrEmail(value);
+    
+    const fieldError = validateField('usernameOrEmail', value);
+    setFieldErrors(prev => ({
+      ...prev,
+      usernameOrEmail: fieldError
+    }));
+
+    if (error) setError("");
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    
+    const fieldError = validateField('password', value);
+    setFieldErrors(prev => ({
+      ...prev,
+      password: fieldError
+    }));
+
+    if (error) setError("");
+  };
+
+  const validateAllFields = (): boolean => {
+    const errors: {[key: string]: string} = {};
+    
+    errors.usernameOrEmail = validateField('usernameOrEmail', usernameOrEmail);
+    errors.password = validateField('password', password);
+    
+    setFieldErrors(errors);
+    
+    return Object.values(errors).every(error => error === '');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!usernameOrEmail || !password) {
-      return setError("Please fill in all fields");
+    if (!validateAllFields()) {
+      setError("Please fix the errors below");
+      return;
     }
 
     try {
       setIsLoading(true);
       setError("");
 
-      const { token, user } = await loginUser(usernameOrEmail, password);
+      const { token, user } = await loginUser(usernameOrEmail.trim(), password);
       login(token, user);
       navigate("/");
     } catch (err: any) {
@@ -51,10 +112,12 @@ const Login: React.FC = () => {
             type="text"
             placeholder="Enter your username or email"
             value={usernameOrEmail}
-            onChange={(e) => setUsernameOrEmail(e.target.value)}
+            onChange={handleUsernameOrEmailChange}
             required
             disabled={isLoading}
+            className={fieldErrors.usernameOrEmail ? 'error' : ''}
           />
+          {fieldErrors.usernameOrEmail && <div className="field-error">{fieldErrors.usernameOrEmail}</div>}
         </div>
 
         <div className="form-group">
@@ -64,10 +127,12 @@ const Login: React.FC = () => {
             type="password"
             placeholder="Enter your password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={handlePasswordChange}
             required
             disabled={isLoading}
+            className={fieldErrors.password ? 'error' : ''}
           />
+          {fieldErrors.password && <div className="field-error">{fieldErrors.password}</div>}
         </div>
 
         <button type="submit" className="submit-button" disabled={isLoading}>

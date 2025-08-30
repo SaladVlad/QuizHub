@@ -11,6 +11,7 @@ import Results from "../pages/Results/Results";
 import ResultDetails from "../pages/ResultDetails/ResultDetails";
 import QuizCreate from "../pages/Admin/QuizCreate";
 import QuizEdit from "../pages/Admin/QuizEdit";
+import AdminResults from "../pages/Admin/AdminResults";
 import LandingPage from "../pages/LandingPage/LandingPage";
 import Layout from "../layouts/Layout";
 import Profile from "../pages/Profile/Profile";
@@ -52,6 +53,10 @@ const AppRouter = () => {
             <Route
               path="admin/quizzes/:id/edit"
               element={admin ? <QuizEdit /> : <Navigate to="/" />}
+            />
+            <Route
+              path="admin/results"
+              element={admin ? <AdminResults /> : <Navigate to="/" />}
             />
             <Route path="profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" />} />

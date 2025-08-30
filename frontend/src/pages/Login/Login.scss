@@ -1,35 +1,47 @@
+@use '../../styles/variables' as *;
+
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background-color: var(--bg-light);
+  min-height: calc(100vh - 64px);
+  background: $light-bg;
   padding: 2rem;
+  font-family: $font-family;
 
   .login-form {
-    background-color: var(--bg-card);
+    background: $white;
     padding: 2.5rem;
-    border-radius: 1rem;
-    box-shadow: var(--shadow-md);
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-md;
     width: 100%;
-    max-width: 480px;
+    max-width: 420px;
 
     h2 {
       text-align: center;
-      color: var(--text-primary);
+      color: $text-dark;
       margin-bottom: 2rem;
       font-size: 1.75rem;
-      font-weight: 600;
+      font-weight: $font-weight-semibold;
+      font-family: $font-family;
     }
 
     .error-message {
-      background-color: var(--error-bg);
-      color: var(--error-text);
+      background: #fee;
+      color: $danger-color;
       padding: 0.75rem 1rem;
-      border-radius: 8px;
+      border-radius: $border-radius-sm;
       margin-bottom: 1.5rem;
       font-size: 0.9rem;
       text-align: center;
+      border-left: 3px solid $danger-color;
+    }
+
+    .field-error {
+      color: $danger-color;
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+      font-family: $font-family;
     }
 
     .form-group {
@@ -38,52 +50,62 @@
       label {
         display: block;
         margin-bottom: 0.5rem;
-        color: var(--text-secondary);
-        font-size: 0.95rem;
-        font-weight: 500;
+        color: $text-muted;
+        font-weight: $font-weight-medium;
+        font-family: $font-family;
       }
 
       input {
         width: 100%;
-        padding: 0.75rem 1rem;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        background-color: var(--input-bg);
-        color: var(--text-primary);
+        padding: 0.875rem;
+        border: 1px solid $border-color;
+        border-radius: $border-radius-sm;
+        background: $white;
+        color: $text-dark;
         font-size: 1rem;
-        transition: border 0.2s ease, box-shadow 0.2s ease;
+        font-family: $font-family;
+        transition: $transition-base;
+        box-sizing: border-box;
 
         &::placeholder {
-          color: var(--text-muted);
+          color: $text-muted;
         }
 
         &:focus {
           outline: none;
-          border-color: var(--accent);
-          box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+          border-color: $primary-color;
+          box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
         }
 
         &:disabled {
-          background-color: var(--disabled-bg);
+          background: #f3f4f6;
           cursor: not-allowed;
+          opacity: 0.6;
+        }
+
+        &.error {
+          border-color: $danger-color;
+          box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
         }
       }
     }
 
     .submit-button {
       width: 100%;
-      padding: 0.875rem 1.5rem;
-      background-color: var(--accent);
-      color: #fff;
+      padding: 0.875rem;
+      background: $primary-color;
+      color: $white;
       border: none;
-      border-radius: 8px;
+      border-radius: $border-radius-sm;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: $font-weight-semibold;
+      font-family: $font-family;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: $transition-base;
 
       &:hover:not(:disabled) {
-        background-color: var(--accent-hover);
+        background: #3a5ae8;
+        transform: translateY(-1px);
       }
 
       &:disabled {
@@ -95,17 +117,33 @@
     .register-link {
       text-align: center;
       margin-top: 2rem;
-      font-size: 0.95rem;
-      color: var(--text-secondary);
+      color: $text-muted;
+      font-family: $font-family;
 
       a {
-        color: var(--accent);
-        font-weight: 500;
+        color: $primary-color;
+        font-weight: $font-weight-medium;
         text-decoration: none;
-        transition: color 0.2s;
+        transition: $transition-base;
 
         &:hover {
-          color: var(--accent-hover);
+          color: #3a5ae8;
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .back-home {
+      text-align: center;
+      margin-top: 1rem;
+      
+      a {
+        color: $text-muted;
+        font-size: 0.9rem;
+        text-decoration: none;
+        font-family: $font-family;
+        
+        &:hover {
           text-decoration: underline;
         }
       }

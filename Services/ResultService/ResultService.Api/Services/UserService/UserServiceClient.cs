@@ -54,6 +54,10 @@ public class UserServiceClient : IUserServiceClient
             var client = GetAuthenticatedClient();
             var response = await client.GetAsync($"api/users/{userId}");
             
+            // Log the raw response
+            var rawResponse = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("Raw user service response: {RawResponse}", rawResponse);
+            
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Failed to get user {UserId}. Status: {StatusCode}", userId, response.StatusCode);

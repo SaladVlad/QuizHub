@@ -1,13 +1,24 @@
-.home {
-  padding-top: 2rem;
+@use '../../styles/variables' as *;
 
-  h1 {
+// Component-specific styles only
+.welcome-content {
+  text-align: center;
+  padding: 2rem 0;
+  
+  h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1f2937;
     margin-bottom: 1rem;
-    color: var(--color-primary);
+    font-family: 'Poppins', sans-serif;
   }
-
+  
   p {
-    font-size: 1.1rem;
-    color: var(--text-secondary);
+    font-size: 1.125rem;
+    color: #6c757d;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+    font-family: 'Poppins', sans-serif;
   }
 }

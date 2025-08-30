@@ -27,6 +27,8 @@ public class UserService : IUserService
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
             Role = user.Role,
             AvatarImage = includeImage ? user.AvatarImage : null
         }).ToListAsync();
@@ -43,6 +45,8 @@ public class UserService : IUserService
                 Id = u.Id,
                 Username = u.Username,
                 Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Role = u.Role,
                 AvatarImage = includeImage ? u.AvatarImage : null 
             })
@@ -64,6 +68,8 @@ public class UserService : IUserService
                 Id = u.Id,
                 Username = u.Username,
                 Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Role = u.Role,
                 AvatarImage = includeImage ? u.AvatarImage : null
             })
@@ -83,6 +89,8 @@ public class UserService : IUserService
                 Id = u.Id,
                 Username = u.Username,
                 Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Role = u.Role,
                 AvatarImage = includeImage ? u.AvatarImage : null
             })

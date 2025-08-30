@@ -336,7 +336,7 @@ const QuizPlay: React.FC<QuizPlayProps> = () => {
         <div className="quiz-result">
           <h1>Quiz Completed!</h1>
           <div className="result-score">
-            Your score: {submittedResult.score} / {questions.length}
+            Your score: {submittedResult.score} / {submittedResult.maxPossibleScore}
           </div>
           <button 
             className="quiz-button"

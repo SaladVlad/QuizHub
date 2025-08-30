@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using ResultService.Api.Clients;
 using ResultService.Api.Common;
+using ResultService.Api.Dtos.Quiz;
 using ResultService.Api.Dtos.Responses;
 using ResultService.Api.Options;
 
@@ -54,10 +55,54 @@ public class QuizServiceClient : IQuizServiceClient
             return ServiceResult<QuizWithQuestionsDto>.FailureResult(ex.Message);
         }
     }
+
+    public async Task<QuizDto?> GetQuizAsync(Guid quizId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"api/quizzes/{quizId}");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to get quiz {QuizId}. Status: {StatusCode}", quizId, response.StatusCode);
+                return null;
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var quiz = JsonSerializer.Deserialize<QuizDto>(content, options);
+            return quiz;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting quiz {QuizId}", quizId);
+            return null;
+        }
+    }
+
+    public async Task<Dictionary<Guid, QuizDto>> GetQuizzesBatchAsync(IEnumerable<Guid> quizIds)
+    {
+        var result = new Dictionary<Guid, QuizDto>();
+        
+        if (!quizIds.Any())
+        {
+            return result;
+        }
+
+        foreach (var quizId in quizIds.Distinct())
+        {
+            var quiz = await GetQuizAsync(quizId);
+            if (quiz != null)
+            {
+                result[quizId] = quiz;
+            }
+        }
+        
+        return result;
+    }
 }
 
-public class QuizServiceOptions
-{
-    public const string SectionName = "QuizService";
-    public string BaseUrl { get; set; } = string.Empty;
-}

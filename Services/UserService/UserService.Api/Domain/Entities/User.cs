@@ -14,6 +14,10 @@ public class User
     [Required]
     public required byte[] PasswordSalt { get; set; }
     public byte[] AvatarImage { get; set; } = Array.Empty<byte>();
+    [Required]
+    public required string FirstName { get; set; }
+    [Required]
+    public required string LastName { get; set; }
     public required string Role { get; set; }
     
 }

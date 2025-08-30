@@ -31,8 +31,8 @@ public class LeaderboardService : ILeaderboardService
 
             // Get all results
             var allResults = await _context.Results.ToListAsync();
+            _logger.LogInformation("Retrieved {Count} total results from database", allResults.Count);
 
-            // Group by user and quiz, then take the best score for each quiz
             var bestScoresPerQuiz = allResults
                 .GroupBy(r => new { r.UserId, r.QuizId })
                 .Select(g => g.OrderByDescending(r => r.Score)
@@ -40,21 +40,21 @@ public class LeaderboardService : ILeaderboardService
                              .First())
                 .ToList();
 
-            // Calculate total score per user by summing their best scores from each quiz
             var userTotalScores = bestScoresPerQuiz
                 .GroupBy(r => r.UserId)
-                .Select(g => new {
+                .Select(g => new
+                {
                     UserId = g.Key,
                     TotalScore = g.Sum(r => r.Score),
-                    // For display purposes, we'll use the most recent completion time
                     LastCompleted = g.Max(r => r.CompletedAt),
-                    // Count of unique quizzes taken
                     QuizzesTaken = g.Count()
                 })
                 .OrderByDescending(x => x.TotalScore)
                 .ThenBy(x => x.LastCompleted) // In case of tie, earlier completion ranks higher
                 .Take(top)
                 .ToList();
+
+            _logger.LogInformation("Processing leaderboard for {UserCount} unique users", userTotalScores.Count);
 
             var leaderboard = new QuizLeaderboardDto
             {
@@ -65,27 +65,70 @@ public class LeaderboardService : ILeaderboardService
 
             // Get all user IDs to fetch in batch
             var userIds = userTotalScores.Select(x => x.UserId).ToList();
+            _logger.LogInformation("Fetching user details for user IDs: {UserIds}", string.Join(", ", userIds));
+
             var users = await _userServiceClient.GetUsersBatchAsync(userIds);
-            
+            _logger.LogInformation("Received {UserCount} user details from user service", users?.Count ?? 0);
+
+            if (users != null && users.Any())
+            {
+                // Log the first user's properties to see what we're working with
+                var firstUser = users.First();
+                _logger.LogInformation("First user details - Key: {Key}, Value: {Value}", 
+                    firstUser.Key, 
+                    firstUser.Value != null ? "Not null" : "NULL");
+
+                if (firstUser.Value != null)
+                {
+                    var props = firstUser.Value.GetType().GetProperties();
+                    _logger.LogInformation("First user properties: {Properties}", 
+                        string.Join(", ", props.Select(p => $"{p.Name}")));
+                    
+                    _logger.LogInformation("First user values: {Values}", 
+                        string.Join(", ", props.Select(p => $"{p.Name}={p.GetValue(firstUser.Value) ?? "null"}")));
+                }
+
+                // Log null or problematic users
+                var nullUsers = users.Where(u => u.Value == null).ToList();
+                if (nullUsers.Any())
+                {
+                    _logger.LogWarning("Found {Count} null user objects for IDs: {UserIds}", 
+                        nullUsers.Count, 
+                        string.Join(", ", nullUsers.Select(u => u.Key)));
+                }
+            }
+            else if (users == null)
+            {
+                _logger.LogError("Users dictionary is null");
+            }
+            else
+            {
+                _logger.LogWarning("Users dictionary is empty");
+            }
+
             var rank = 1;
             foreach (var userScore in userTotalScores)
             {
                 // Try to get user details from the batch, fall back to just the ID if not found
-                var user = users.GetValueOrDefault(userScore.UserId);
-                var userName = user?.DisplayName ?? $"User {userScore.UserId.ToString().Substring(0, 8)}";
-                
+                var user = users?.GetValueOrDefault(userScore.UserId);
+                var displayName = GetUserFullName(user) ?? $"User-{userScore.UserId.ToString().Substring(0, 4)}";
+
+                _logger.LogInformation("User ID: {UserId}, DisplayName: {DisplayName}", 
+                    userScore.UserId, displayName);
+
                 leaderboard.Entries.Add(new LeaderboardEntryDto
                 {
                     Rank = rank++,
                     UserId = userScore.UserId,
-                    UserName = userName,
+                    UserName = displayName,
                     UserEmail = user?.Email,
                     Score = userScore.TotalScore,
-                    // For global leaderboard, time taken doesn't make sense, so we'll show quizzes taken
-                    TimeTakenSeconds = userScore.QuizzesTaken,
+                    TimeTakenSeconds = userScore.QuizzesTaken, // Use this field to store quiz count for global leaderboard
                     CompletedAt = userScore.LastCompleted
                 });
             }
+
+            _logger.LogInformation("Successfully built leaderboard with {EntryCount} entries", leaderboard.Entries.Count);
 
             return ServiceResult<QuizLeaderboardDto>.SuccessResult(leaderboard);
         }
@@ -101,7 +144,7 @@ public class LeaderboardService : ILeaderboardService
         try
         {
             if (top < 1 || top > 1000) top = 100;
-            
+
             // Get all results for this quiz
             var quizResults = await _context.Results
                 .Where(r => r.QuizId == quizId)
@@ -130,14 +173,14 @@ public class LeaderboardService : ILeaderboardService
             // Get all user IDs to fetch in batch
             var userIds = bestScores.Select(r => r.UserId).ToList();
             var users = await _userServiceClient.GetUsersBatchAsync(userIds);
-            
+
             var rank = 1;
             foreach (var best in bestScores)
             {
                 // Try to get user details from the batch, fall back to just the ID if not found
                 var user = users.GetValueOrDefault(best.UserId);
-                var userName = user?.DisplayName ?? $"User {best.UserId.ToString().Substring(0, 8)}";
-                
+                var userName = GetUserFullName(user) ?? $"User {best.UserId.ToString().Substring(0, 8)}";
+
                 leaderboard.Entries.Add(new LeaderboardEntryDto
                 {
                     Rank = rank++,
@@ -159,17 +202,33 @@ public class LeaderboardService : ILeaderboardService
         }
     }
 
-    public Task<ServiceResult<List<QuizLeaderboardDto>>> GetLeaderboardByCategoryAsync(string category, int top = 100)
+    public async Task<ServiceResult<List<QuizLeaderboardDto>>> GetLeaderboardByCategoryAsync(string category, int top = 100)
     {
         try
         {
             if (top < 1 || top > 100) top = 100;
-            return Task.FromResult(ServiceResult<List<QuizLeaderboardDto>>.FailureResult("Leaderboard by category is not implemented yet", 501));
+
+            // For now, return the global leaderboard as category-specific implementation would require
+            // access to QuizService to filter by category. This is a basic implementation.
+            var globalLeaderboard = await GetGlobalLeaderboardAsync(top);
+            
+            if (!globalLeaderboard.Success)
+            {
+                return ServiceResult<List<QuizLeaderboardDto>>.FailureResult(
+                    globalLeaderboard.ErrorMessage ?? "Failed to get category leaderboard", 
+                    globalLeaderboard.StatusCode);
+            }
+
+            // Return as a list containing the global leaderboard with category title
+            var categoryLeaderboard = globalLeaderboard.Data!;
+            categoryLeaderboard.QuizTitle = $"Category: {category}";
+            
+            return ServiceResult<List<QuizLeaderboardDto>>.SuccessResult(new List<QuizLeaderboardDto> { categoryLeaderboard });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving leaderboard for category {Category}", category);
-            return Task.FromResult(ServiceResult<List<QuizLeaderboardDto>>.FailureResult("An error occurred while retrieving the category leaderboard", 500));
+            return ServiceResult<List<QuizLeaderboardDto>>.FailureResult("An error occurred while retrieving the category leaderboard", 500);
         }
     }
 
@@ -186,5 +245,27 @@ public class LeaderboardService : ILeaderboardService
             _logger.LogError(ex, "Error retrieving quiz title for {QuizId}", quizId);
             return null;
         }
+    }
+
+    private static string? GetUserFullName(UserDto? user)
+    {
+        if (user == null) return null;
+        
+        if (!string.IsNullOrWhiteSpace(user.FirstName) && !string.IsNullOrWhiteSpace(user.LastName))
+        {
+            return $"{user.FirstName} {user.LastName}".Trim();
+        }
+        
+        if (!string.IsNullOrWhiteSpace(user.FirstName))
+        {
+            return user.FirstName.Trim();
+        }
+        
+        if (!string.IsNullOrWhiteSpace(user.LastName))
+        {
+            return user.LastName.Trim();
+        }
+        
+        return user.UserName?.Trim();
     }
 }

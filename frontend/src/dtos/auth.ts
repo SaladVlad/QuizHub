@@ -13,6 +13,8 @@ export interface LoginResponseDto {
 export interface RegisterRequestDto {
   username: string
   email: string
+  firstName: string
+  lastName: string
   password: string
   confirmPassword: string
   avatarImage?: File

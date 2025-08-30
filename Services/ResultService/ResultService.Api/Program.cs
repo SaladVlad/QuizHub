@@ -10,8 +10,10 @@ using ResultService.Api.Services.GradingService;
 using ResultService.Api.Services.LeaderboardService;
 using ResultService.Api.Services.ResultService;
 using ResultService.Api.Services.UserService;
+using ResultService.Api.Clients;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,12 +69,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddDbContext<ResultDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Configure options
+builder.Services.Configure<QuizServiceOptions>(builder.Configuration.GetSection(QuizServiceOptions.SectionName));
+builder.Services.Configure<UserServiceOptions>(builder.Configuration.GetSection(UserServiceOptions.SectionName));
+builder.Services.Configure<JsonSerializerOptions>(options =>
+{
+    options.PropertyNameCaseInsensitive = true;
+    options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+});
+
 // Register services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IResultService, ResultService.Api.Services.ResultService.ResultService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<IGradingService, GradingService>();
 builder.Services.AddScoped<IUserServiceClient, UserServiceClient>();
+builder.Services.AddScoped<IQuizServiceClient, QuizServiceClient>();
 
 // Add logging
 builder.Services.AddLogging();

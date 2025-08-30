@@ -39,6 +39,8 @@ export const registerUser = async (
 ): Promise<LoginResponseDto> => {
   const formData = new FormData()
   formData.append('username', userData.username)
+  formData.append('firstName', userData.firstName)
+  formData.append('lastName', userData.lastName)
   formData.append('email', userData.email)
   formData.append('password', userData.password)
   formData.append('confirmPassword', userData.confirmPassword)

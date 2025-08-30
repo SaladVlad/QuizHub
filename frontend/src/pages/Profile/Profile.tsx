@@ -137,20 +137,24 @@ const Profile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="profile-container">
+      <div className="page-container">
         <Loading />
       </div>
     );
   }
 
   return (
-    <div className="profile">
-      <h1>My Profile</h1>
+    <div className="page-container">
+      <div className="page-header">
+        <h1>My Profile</h1>
+        <p>Manage your account settings and personal information</p>
+      </div>
 
       {error && <div className="message error-message">{error}</div>}
       {success && <div className="message success-message">{success}</div>}
 
       <div className="card">
+        <div className="card-body">
         <div className="avatar-upload">
           <input
             type="file"
@@ -282,6 +286,7 @@ const Profile: React.FC = () => {
             >
               Change Password
             </button>
+          </div>
           </div>
         </div>
       </div>

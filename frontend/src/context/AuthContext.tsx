@@ -30,17 +30,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (token && userData) {
         try {
-          const parsedUser = JSON.parse(userData);
           // Verify the token is still valid by making an API call
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/validate-token`, {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/auth/currentUser`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
           
           if (response.ok) {
-            setUser(parsedUser);
+            // Get the latest user data from the server
+            const currentUserData = await response.json();
+            setUser(currentUserData);
             setAuthenticated(true);
+            // Update localStorage with fresh user data
+            localStorage.setItem("user", JSON.stringify(currentUserData));
           } else {
             // Token is invalid, clear local storage
             localStorage.removeItem("jwt");

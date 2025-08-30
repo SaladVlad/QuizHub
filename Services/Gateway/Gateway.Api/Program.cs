@@ -4,11 +4,19 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+// Clear default providers and let Serilog handle logging
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
 
 builder.Configuration.AddEnvironmentVariables();
 string environment = builder.Environment.EnvironmentName;
@@ -58,6 +66,25 @@ if (builder.Environment.IsProduction())
 
 var app = builder.Build();
 
+// Add custom logging middleware to log all gateway activities
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    var startTime = DateTime.UtcNow;
+    var requestId = Guid.NewGuid();
+    
+    logger.LogInformation("Gateway Request Started: {RequestId} {Method} {Path} from {RemoteIpAddress}",
+        requestId, context.Request.Method, context.Request.Path, context.Connection.RemoteIpAddress);
+    
+    await next();
+    
+    var endTime = DateTime.UtcNow;
+    var elapsed = endTime - startTime;
+    
+    logger.LogInformation("Gateway Request Completed: {RequestId} {Method} {Path} responded {StatusCode} in {ElapsedMs}ms",
+        requestId, context.Request.Method, context.Request.Path, context.Response.StatusCode, elapsed.TotalMilliseconds);
+});
+
 app.MapGet("/", () => $"Gateway is running in {environment} environment");
 app.MapControllers();
 
@@ -69,12 +96,24 @@ try
     app.UseAuthorization();
     
     await app.UseOcelot();
-    Console.WriteLine("Ocelot middleware initialized successfully");
+    Log.Information("Ocelot middleware initialized successfully");
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Error initializing Ocelot: {ex}");
+    Log.Fatal(ex, "Error initializing Ocelot");
     throw;
 }
 
-await app.RunAsync();
+try
+{
+    Log.Information("Starting Gateway Service");
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Gateway Service terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

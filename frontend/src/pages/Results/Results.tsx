@@ -13,6 +13,19 @@ const Results: React.FC = () => {
   const [results, setResults] = useState<ResultDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const [expandedQuizzes, setExpandedQuizzes] = useState<Set<string>>(new Set());
+  
+  const toggleQuizExpansion = (quizId: string) => {
+    setExpandedQuizzes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(quizId)) {
+        newSet.delete(quizId);
+      } else {
+        newSet.add(quizId);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -23,22 +36,26 @@ const Results: React.FC = () => {
         const list: ResultDto[] = Array.isArray(data) ? data : data?.items ?? [];
 
         // Build a map of quizId -> title by fetching any missing titles
-        const uniqueQuizIds = Array.from(new Set(list.map(r => r.quizId)));
+        const uniqueQuizIds = Array.from(new Set(list.map(r => r.quizId).filter(id => id)));
         const titleMap: Record<string, string> = {};
-        await Promise.all(
+        
+        // Use Promise.allSettled to handle individual failures better
+        const titleResults = await Promise.allSettled(
           uniqueQuizIds.map(async (qid) => {
-            try {
-              const quiz = await getQuizById(qid);
-              if (quiz?.title) titleMap[qid] = quiz.title;
-            } catch {
-              // ignore failures, fallback to showing quizId
-            }
+            const quiz = await getQuizById(qid);
+            return { id: qid, title: quiz?.title };
           })
         );
+        
+        titleResults.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value?.title && result.value?.id) {
+            titleMap[result.value.id] = result.value.title;
+          }
+        });
 
         const withTitles = list.map(r => ({
           ...r,
-          quizTitle: r.quizTitle || titleMap[r.quizId]
+          quizTitle: r.quizTitle || titleMap[r.quizId] || 'Unknown Quiz'
         }));
         setResults(withTitles);
       } catch (e: any) {
@@ -73,11 +90,11 @@ const Results: React.FC = () => {
       const date = new Date(result.completedAt || 0);
       
       return {
-        name: `${result.quizTitle || 'Quiz'} #${attemptNumber}`,
+        name: `${result.quizTitle || 'Unknown Quiz'} #${attemptNumber}`,
         date: date.toISOString(), // Use full ISO string for unique timestamps
         score: parseFloat(score.toFixed(1)),
         fullDate: date,
-        quizTitle: result.quizTitle || `Quiz ${result.quizId}`,
+        quizTitle: result.quizTitle || 'Unknown Quiz',
         attemptNumber
       };
     });
@@ -85,20 +102,28 @@ const Results: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="results">
-        <h1>My Results</h1>
+      <div className="page-container">
+        <div className="page-header">
+          <h1>My Results</h1>
+        </div>
         <Loading />
       </div>
     );
   }
 
   return (
-    <div className="results">
-      <h1>My Quiz Results</h1>
-      {error && <div className="error-message">{error}</div>}
+    <div className="page-container">
+      <div className="page-header">
+        <h1>My Quiz Results</h1>
+        <p>Track your progress and review your quiz performance</p>
+      </div>
       
-      {progressData.length > 1 && (
-        <div className="progress-graph">
+      <div className="card">
+        <div className="card-body">
+          {error && <div className="error-message">{error}</div>}
+          
+          {progressData.length > 1 && (
+            <div className="progress-graph">
           <h2>Your Progress Over Time</h2>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={300}>
@@ -150,9 +175,9 @@ const Results: React.FC = () => {
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       {(() => {
         // Group results by quizId
         const groups = results.reduce<Record<string, { quizId: string; quizTitle?: string; items: ResultDto[] }>>((acc, r) => {
@@ -187,11 +212,20 @@ const Results: React.FC = () => {
 
               return (
                 <div className="results-group" key={g.quizId}>
-                  <h2 className="group-title">{g.quizTitle || `Quiz ${g.quizId}`}</h2>
+                  <h2 className="group-title">{g.quizTitle || 'Unknown Quiz'}</h2>
                   <div className="results-list">
-                    {g.items
-                      .sort((a, b) => new Date(b.completedAt || 0).getTime() - new Date(a.completedAt || 0).getTime())
-                      .map((r, i) => {
+                    {(() => {
+                      const sortedItems = g.items
+                        .sort((a, b) => new Date(b.completedAt || 0).getTime() - new Date(a.completedAt || 0).getTime());
+                      
+                      const isExpanded = expandedQuizzes.has(g.quizId);
+                      const maxItems = 2;
+                      const itemsToShow = isExpanded ? sortedItems : sortedItems.slice(0, maxItems);
+                      const hasMore = sortedItems.length > maxItems;
+                      
+                      return (
+                        <>
+                          {itemsToShow.map((r, i) => {
                         const score = r.percentageScore !== undefined 
                           ? r.percentageScore 
                           : (r.score / (r.maxPossibleScore || 1)) * 100;
@@ -202,10 +236,15 @@ const Results: React.FC = () => {
                             key={r.id || i} 
                             className={`result-card ${isHighScore ? 'high-score' : ''}`}
                           >
-                            <p className="score-display">
-                              <span className="score-value">{score.toFixed(1)}%</span>
-                              {isHighScore && <span className="high-score-badge">🏆 Best</span>}
-                            </p>
+                            <div className="score-section">
+                              <div className="score-label">
+                                <span className="score-value">{score.toFixed(1)}%</span>
+                                {isHighScore && <span className="high-score-badge">🏆 Best</span>}
+                              </div>
+                              <div className="progress-bar">
+                                <div className="progress-fill" style={{width: `${Math.max(0, Math.min(100, score))}%`}}></div>
+                              </div>
+                            </div>
                             <p className="date-display">
                               {new Date(r.completedAt || '').toLocaleDateString(undefined, {
                                 year: 'numeric',
@@ -220,13 +259,32 @@ const Results: React.FC = () => {
                           </div>
                         );
                       })}
+                          
+                          {hasMore && (
+                            <div className="show-more-container">
+                              <button 
+                                className="btn-show-more"
+                                onClick={() => toggleQuizExpansion(g.quizId)}
+                              >
+                                {isExpanded 
+                                  ? `Show Less (-${sortedItems.length - maxItems} results)`
+                                  : `Show More (+${sortedItems.length - maxItems} results)`
+                                }
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               );
             })}
           </div>
-        );
-      })()}
+          );
+        })()}
+        </div>
+      </div>
     </div>
   );
 };

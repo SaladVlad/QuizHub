@@ -22,7 +22,6 @@ const ResultDetails: React.FC = () => {
         setLoading(true);
         const res = await getResultById(id);
         setResult(res);
-        // Fetch quiz with questions to show question texts/answers
         const quiz = await getQuizWithQuestions(res.quizId);
         setQuestions(quiz?.questions ?? []);
       } catch (e: any) {
@@ -35,10 +34,17 @@ const ResultDetails: React.FC = () => {
   }, [id]);
 
   const answersByQuestion = useMemo(() => {
-    const map: Record<string, { givenAnswer: string; pointsAwarded?: number; isCorrect?: boolean }> = {};
+    const map: Record<
+      string,
+      { givenAnswer: string; pointsAwarded?: number; isCorrect?: boolean }
+    > = {};
     if (result?.answers) {
       for (const a of result.answers) {
-        map[a.questionId] = { givenAnswer: a.givenAnswer, pointsAwarded: a.pointsAwarded, isCorrect: a.isCorrect };
+        map[a.questionId] = {
+          givenAnswer: a.givenAnswer,
+          pointsAwarded: a.pointsAwarded,
+          isCorrect: a.isCorrect,
+        };
       }
     }
     return map;
@@ -46,7 +52,10 @@ const ResultDetails: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container result-details">
+      <div className="page-container">
+        <div className="page-header">
+          <h1>Result Details</h1>
+        </div>
         <p>Loading...</p>
       </div>
     );
@@ -54,48 +63,79 @@ const ResultDetails: React.FC = () => {
 
   if (error) {
     return (
-      <div className="container result-details">
-        <div className="error-message">{error}</div>
+      <div className="page-container">
+        <div className="page-header">
+          <h1>Result Details</h1>
+        </div>
+        <div className="card">
+          <div className="card-body">
+            <div className="error-message">{error}</div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!result) {
     return (
-      <div className="container result-details">
-        <p>Result not found.</p>
+      <div className="page-container">
+        <div className="page-header">
+          <h1>Result Details</h1>
+        </div>
+        <div className="card">
+          <div className="card-body">
+            <p>Result not found.</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container result-details">
-      <div className="header">
+    <div className="page-container">
+      <div className="page-header">
         <h1>Result Details</h1>
-        <div className="meta">
-          <div>Quiz: {result.quizTitle || result.quizId}</div>
-          <div>
-            Score: {(() => {
-              const pct = typeof result.percentageScore === "number"
-                ? result.percentageScore
-                : (result.score / (result.maxPossibleScore || 1)) * 100;
-              return pct.toFixed(2);
-            })()}%
-            , Time: {Math.max(1, result.timeTakenSeconds)}s
-          </div>
-        </div>
-        <button className="btn" onClick={() => navigate(-1)}>Back</button>
+        <p>Review your quiz answers and performance</p>
       </div>
+      
+      <div className="card">
+        <div className="card-body">
+          <div className="result-meta">
+            <div>Quiz: {result.quizTitle || 'Unknown Quiz'}</div>
+            <div>
+              Score:{" "}
+              {(() => {
+                const pct =
+                  typeof result.percentageScore === "number"
+                    ? result.percentageScore
+                    : (result.score / (result.maxPossibleScore || 1)) * 100;
+                return pct.toFixed(2);
+              })()}
+              % , Time: {Math.max(1, result.timeTakenSeconds)}s
+            </div>
+            <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+              Back
+            </button>
+          </div>
 
-      <div className="questions">
+          <div className="questions">
         {questions.map((q, idx) => {
           const ans = answersByQuestion[q.id];
-          const isMultiple = q.questionType === 1 || (q as any).questionType === "MultipleChoice";
-          const givenSet = new Set((ans?.givenAnswer ?? "").split(",").map(s => s.trim()).filter(Boolean));
-          
+          const isMultiple =
+            q.questionType === 1 ||
+            (q as any).questionType === "MultipleChoice";
+          const givenSet = new Set(
+            (ans?.givenAnswer ?? "")
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          );
 
           return (
-            <div key={q.id} className={`question ${ans?.isCorrect ? "correct" : "incorrect"}`}>
+            <div
+              key={q.id}
+              className={`question ${ans?.isCorrect ? "correct" : "incorrect"}`}
+            >
               <div className="q-header">
                 <span className="q-index">Q{idx + 1}.</span>
                 <span className="q-text">{q.text}</span>
@@ -104,17 +144,20 @@ const ResultDetails: React.FC = () => {
                 )}
               </div>
               <div className="q-answers">
-                {q.answers.map(a => {
+                {q.answers.map((a) => {
                   const isCorrect = !!a.isCorrect;
                   const userSelected = isMultiple
                     ? givenSet.has(a.id)
-                    : givenSet.has(a.text) || givenSet.has(a.text.toLowerCase());
+                    : givenSet.has(a.text) ||
+                      givenSet.has(a.text.toLowerCase());
                   return (
                     <div
                       key={a.id}
-                      className={`ans ${isCorrect ? "correct" : ""} ${userSelected ? "selected" : ""}`}
+                      className={`ans ${isCorrect ? "correct" : ""} ${
+                        userSelected ? "selected" : ""
+                      } ${isMultiple ? "checkbox" : ""}`}
                     >
-                      <span className="bullet">{isMultiple ? (userSelected ? "[x]" : "[ ]") : userSelected ? "(o)" : "( )"}</span>
+                      <span className="bullet"></span>
                       <span className="text">{a.text}</span>
                     </div>
                   );
@@ -122,12 +165,23 @@ const ResultDetails: React.FC = () => {
               </div>
               {!ans?.isCorrect && ans?.givenAnswer && (
                 <div className="given">
-                  Your answer: <em>{ans.givenAnswer}</em>
+                  Your answer: <em>{
+                    isMultiple 
+                      ? givenSet.size > 0 
+                        ? Array.from(givenSet).map(answerId => {
+                            const answer = q.answers.find(a => a.id === answerId);
+                            return answer?.text || answerId;
+                          }).join(', ')
+                        : 'No answer selected'
+                      : ans.givenAnswer
+                  }</em>
                 </div>
               )}
             </div>
           );
         })}
+          </div>
+        </div>
       </div>
     </div>
   );

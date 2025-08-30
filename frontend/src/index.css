@@ -1,150 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body, #root {
+html, body {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
 }
 
-/* Reset button styles */
-button, input[type="button"], input[type="submit"], input[type="reset"], .button {
-  all: unset;
-  font-family: inherit;
+body {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #1f2937;
+  background: #f4f4f6;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+h1 { font-size: 2rem; margin-bottom: 1rem; }
+h2 { font-size: 1.5rem; margin-bottom: 0.75rem; }
+h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+
+button {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  white-space: nowrap;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
-  box-sizing: border-box;
-  line-height: 1.5;
+  border: none;
+  background: none;
+  padding: 0;
   transition: all 0.2s ease;
 }
 
-/* Remove default focus outline but keep it for keyboard navigation */
-button:focus:not(:focus-visible) {
-  outline: none;
-}
-
-body {
-  font-family: "Inter", sans-serif;
-  background-color: #f4f4f6;
-  color: #1f2937;
-  min-height: 100vh;
-  width: 100%;
-  line-height: 1.6;
-  margin: 0;
-  padding: 0;
+input, textarea, select {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
 }
 
 a {
+  font-family: 'Poppins', sans-serif;
   text-decoration: none;
   color: inherit;
 }
 
-ul {
+ul, ol {
   list-style: none;
 }
 
-button {
-  font-family: inherit;
-}
-
-:root {
-  /* Color Variables */
-  --color-primary: #4a6bff;
-  --color-primary-rgb: 74, 107, 255;
-  --color-primary-light: #7d9bff;
-  --color-primary-dark: #3a5ae8;
-  --color-secondary: #3b82f6;
-  --color-secondary-dark: #2563eb;
-  --color-success: #28a745;
-  --color-warning: #ffc107;
-  --color-danger: #dc3545;
-  
-  /* Background Colors */
-  --color-background: #f4f4f6;
-  --color-surface: #ffffff;
-  --bg-light: #f8f9fa;
-  --bg-card: #ffffff;
-  --input-bg: #ffffff;
-  --disabled-bg: #f3f4f6;
-
-  /* Text Colors */
-  --text-primary: #1f2937;
-  --text-secondary: #4b5563;
-  --text-muted: #6c757d;
-  --text-light: #f8f9fa;
-  --text-dark: #212529;
-
-  /* Status Colors */
-  --success-bg: #d4edda;
-  --success-text: #155724;
-  --warning-bg: #fff3cd;
-  --warning-text: #856404;
-  --error-bg: #f8d7da;
-  --error-text: #721c24;
-  --info-bg: #d1ecf1;
-  --info-text: #0c5460;
-
-  /* Border & Shadows */
-  --color-border: #e9ecef;
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-inset: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
-
-  /* Transitions */
-  --transition-base: all 0.2s ease-in-out;
-  --transition-slow: all 0.35s ease;
-  
-  /* Spacing */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-xxl: 3rem;
-
-  /* Z-index */
-  --z-index-dropdown: 1000;
-  --z-index-sticky: 1020;
-  --z-index-fixed: 1030;
-  --z-index-modal-backdrop: 1040;
-  --z-index-modal: 1050;
-  --z-index-popover: 1060;
-  --z-index-tooltip: 1070;
-  
-  /* Breakpoints */
-  --breakpoint-sm: 576px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 992px;
-  --breakpoint-xl: 1200px;
-  --breakpoint-xxl: 1400px;
-
-  /* Landing page specific */
-  --landing-overlay: rgba(0, 0, 0, 0.35);
-  --landing-heading: #ffffff;
-  --landing-text: #eef2ff;
-  --landing-gap: 1rem;
-  --landing-min-height: 100vh;
-  --landing-anim-max-width: 900px;
-  --landing-anim-height: 420px;
-  --landing-rect-bg: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  --landing-rect-border: rgba(255, 255, 255, 0.4);
-  --landing-rect-shadow: var(--shadow-md);
+button:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .container {
@@ -154,121 +75,137 @@ button {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: var(--radius);
+  border-radius: 8px;
   font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  font-family: 'Poppins', sans-serif;
 }
 
 .btn-primary {
-  background-color: var(--color-primary);
+  background: #4a6bff;
   color: white;
 }
 
 .btn-primary:hover {
-  background-color: var(--color-primary-dark);
+  background: #3a5ae8;
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background-color: var(--color-secondary);
+  background: #6c757d;
   color: white;
 }
 
 .btn-secondary:hover {
-  background-color: var(--color-secondary-dark);
+  background: #5a6268;
 }
 
-.btn-disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.btn-danger {
+  background: #dc3545;
+  color: white;
 }
 
-.back-home {
-  margin-top: 0.75rem;
-  text-align: center;
-}
-.back-home a {
-  color: var(--color-secondary);
-  font-weight: 500;
-  transition: color 0.2s ease, transform 0.1s ease;
-}
-.back-home a:hover {
-  color: var(--color-secondary-dark);
-  text-decoration: underline;
-}
-.back-home a:active {
-  transform: translateY(1px);
+.btn-danger:hover {
+  background: #c82333;
 }
 
-input,
-textarea,
-select {
+input, textarea, select {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background-color: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
   font-size: 1rem;
-  transition: border 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 
-input:focus,
-textarea:focus,
-select:focus {
+input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  border-color: #4a6bff;
+  box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
 }
 
+.text-center { text-align: center; }
+.text-muted { color: #6c757d; }
+
+/* Page Header System */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.page-header {
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #4a6bff;
+  margin-bottom: 0.5rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.page-header p {
+  font-size: 1.125rem;
+  color: #6c757d;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Card System */
 .card {
-  background-color: var(--color-surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
+}
+
+.card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.card-body {
   padding: 1.5rem;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+/* Section Headers */
+.section-header {
+  margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+  font-size: 1.75rem;
   font-weight: 600;
-  color: #111827;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+  font-family: 'Poppins', sans-serif;
 }
 
-h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-h2 {
+.section-header h3 {
   font-size: 1.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-.mb-4 {
-  margin-bottom: 1rem;
-}
-.p-4 {
-  padding: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+  font-family: 'Poppins', sans-serif;
 }
 
 @media (max-width: 768px) {
   .container {
     padding: 1rem 0.5rem;
   }
-
-  h1 {
-    font-size: 1.5rem;
-  }
+  
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
 }

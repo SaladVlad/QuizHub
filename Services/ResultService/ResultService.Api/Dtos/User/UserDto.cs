@@ -20,11 +20,11 @@ public class UserDto
     public string? LastName { get; set; }
     
     [JsonPropertyName("displayName")]
-    public string DisplayName => !string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName)
-        ? $"{FirstName} {LastName}"
-        : !string.IsNullOrEmpty(FirstName) 
-            ? FirstName 
-            : !string.IsNullOrEmpty(UserName) 
-                ? UserName 
-                : Email.Split('@')[0];
+    public string DisplayName => !string.IsNullOrEmpty(UserName) 
+        ? UserName 
+        : !string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName)
+            ? $"{FirstName} {LastName}"
+            : !string.IsNullOrEmpty(FirstName)
+                ? FirstName
+                : Email?.Split('@')[0] ?? "Anonymous";
 }

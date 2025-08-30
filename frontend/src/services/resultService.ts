@@ -24,6 +24,25 @@ export const getUserResults = async (
   return res.json()
 }
 
+// Admin function to get all results with pagination and optional search
+export const getAllResults = async (
+  page = 1,
+  pageSize = 20,
+  search?: string
+): Promise<PaginatedResponse<ResultDto>> => {
+  const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
+  const res = await fetch(
+    `${API_BASE_URL}/results?page=${page}&pageSize=${pageSize}${searchParam}`,
+    {
+      method: 'GET',
+      headers: buildHeaders(true),
+      credentials: 'include'
+    }
+  )
+  if (!res.ok) await handleApiError(res)
+  return res.json()
+}
+
 export const getResultById = async (id: string): Promise<ResultDto> => {
   const res = await fetch(`${API_BASE_URL}/results/${id}`, {
     method: 'GET',
