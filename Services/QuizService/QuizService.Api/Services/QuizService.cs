@@ -18,14 +18,14 @@ public class QuizService : IQuizService
         _logger = logger;
     }
 
-    public async Task<ServiceResult<QuizResponseDto>> GetQuizByIdAsync(Guid id)
+    public async Task<ServiceResult<QuizResponseDto>> GetQuizByIdAsync(Guid id, bool includeDeleted = false)
     {
         try
         {
             var quiz = await _context.Quizzes
                 .Include(q => q.Questions)
                 .ThenInclude(q => q.Answers)
-                .FirstOrDefaultAsync(q => q.Id == id);
+                .FirstOrDefaultAsync(q => q.Id == id && (includeDeleted || !q.IsDeleted));
 
             if (quiz == null)
             {
@@ -42,14 +42,14 @@ public class QuizService : IQuizService
         }
     }
 
-    public async Task<ServiceResult<QuizWithQuestionsDto>> GetQuizWithQuestionsAsync(Guid id)
+    public async Task<ServiceResult<QuizWithQuestionsDto>> GetQuizWithQuestionsAsync(Guid id, bool includeDeleted = false)
     {
         try
         {
             var quiz = await _context.Quizzes
                 .Include(q => q.Questions)
                     .ThenInclude(q => q.Answers)
-                .FirstOrDefaultAsync(q => q.Id == id);
+                .FirstOrDefaultAsync(q => q.Id == id && (includeDeleted || !q.IsDeleted));
 
             if (quiz == null)
             {
@@ -97,6 +97,7 @@ public class QuizService : IQuizService
         try
         {
             var quizzes = await _context.Quizzes
+                .Where(q => !q.IsDeleted)
                 .Include(q => q.Questions)
                 .ThenInclude(q => q.Answers)
                 .OrderBy(q => q.Title)
@@ -119,7 +120,7 @@ public class QuizService : IQuizService
         try
         {
             var quizzes = await _context.Quizzes
-                .Where(q => q.Category == category)
+                .Where(q => q.Category == category && !q.IsDeleted)
                 .Include(q => q.Questions)
                 .ThenInclude(q => q.Answers)
                 .OrderBy(q => q.Title)
@@ -193,7 +194,7 @@ public class QuizService : IQuizService
             // First, get the quiz with tracking disabled to avoid concurrency issues
             var quiz = await _context.Quizzes
                 .AsNoTracking()
-                .FirstOrDefaultAsync(q => q.Id == id);
+                .FirstOrDefaultAsync(q => q.Id == id && !q.IsDeleted);
 
             if (quiz == null)
             {
@@ -272,7 +273,7 @@ public class QuizService : IQuizService
         try
         {
             var quiz = await _context.Quizzes.FindAsync(id);
-            if (quiz == null)
+            if (quiz == null || quiz.IsDeleted)
             {
                 return ServiceResult.FailureResult("Quiz not found", 404);
             }
@@ -282,7 +283,11 @@ public class QuizService : IQuizService
                 return ServiceResult.FailureResult("You are not authorized to delete this quiz", 403);
             }
 
-            _context.Quizzes.Remove(quiz);
+            // Logical deletion
+            quiz.IsDeleted = true;
+            quiz.DeletedAt = DateTime.UtcNow;
+            
+            _context.Quizzes.Update(quiz);
             await _context.SaveChangesAsync();
             return ServiceResult.SuccessResult();
         }
@@ -298,7 +303,7 @@ public class QuizService : IQuizService
         try
         {
             var quiz = await _context.Quizzes.FindAsync(quizId);
-            if (quiz == null)
+            if (quiz == null || quiz.IsDeleted)
             {
                 return ServiceResult.FailureResult("Quiz not found", 404);
             }

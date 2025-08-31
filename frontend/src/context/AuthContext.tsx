@@ -7,6 +7,7 @@ interface AuthContextType {
   user: UserDto | null;
   login: (token: string, user: UserDto) => void;
   logout: () => void;
+  updateUser: (user: UserDto) => void;
   loading: boolean;
 }
 
@@ -15,6 +16,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   login: () => {},
   logout: () => {},
+  updateUser: () => {},
   loading: true,
 });
 
@@ -31,7 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (token && userData) {
         try {
           // Verify the token is still valid by making an API call
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/auth/currentUser`, {
+          const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/users/auth/currentUser`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -39,10 +41,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           if (response.ok) {
             // Get the latest user data from the server
-            const currentUserData = await response.json();
+            const responseData = await response.json();
+            // Extract user from ServiceResult structure if needed
+            const currentUserData = responseData.data || responseData;
             setUser(currentUserData);
             setAuthenticated(true);
-            // Update localStorage with fresh user data
+            // Update localStorage with just the user data
             localStorage.setItem("user", JSON.stringify(currentUserData));
           } else {
             // Token is invalid, clear local storage
@@ -51,6 +55,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } catch (error) {
           console.error("Auth initialization error:", error);
+          // Fallback to localStorage data if server fetch fails
+          try {
+            const storedUserData = JSON.parse(userData);
+            const fallbackUser = storedUserData.data || storedUserData;
+            if (fallbackUser && fallbackUser.id) {
+              setUser(fallbackUser);
+              setAuthenticated(true);
+              return;
+            }
+          } catch (parseError) {
+            console.error("Failed to parse stored user data:", parseError);
+          }
           localStorage.removeItem("jwt");
           localStorage.removeItem("user");
         }
@@ -98,11 +114,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAuthenticated(false);
   };
 
+  const updateUser = (updatedUser: UserDto) => {
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   const value = {
     isAuthenticated,
     user,
     login,
     logout,
+    updateUser,
     loading,
   };
 

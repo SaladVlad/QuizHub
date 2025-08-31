@@ -121,15 +121,18 @@ public class UserService : IUserService
 
         if (!string.IsNullOrWhiteSpace(request.Email)) user.Email = request.Email;
         if (!string.IsNullOrWhiteSpace(request.Username)) user.Username = request.Username;
-        if (request.AvatarImage != null && request.AvatarImage.Length > 0)
+        if (!string.IsNullOrWhiteSpace(request.FirstName)) user.FirstName = request.FirstName;
+        if (!string.IsNullOrWhiteSpace(request.LastName)) user.LastName = request.LastName;
+        // Handle avatar image update/removal        
+        if (request.RemoveImage)
+        {
+            user.AvatarImage = Array.Empty<byte>();
+        }
+        else if (request.AvatarImage != null && request.AvatarImage.Length > 0)
         {
             using var ms = new MemoryStream();
             await request.AvatarImage.CopyToAsync(ms);
             user.AvatarImage = ms.ToArray();
-        }
-        else
-        {
-            user.AvatarImage = null; // Clear the image if not provided
         }
 
         await _context.SaveChangesAsync();

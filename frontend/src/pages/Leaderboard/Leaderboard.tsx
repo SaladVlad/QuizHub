@@ -21,7 +21,6 @@ const Leaderboard: React.FC = () => {
     const loadLeaderboard = async () => {
       try {
         const leaderboardData = await getGlobalLeaderboard();
-        console.log('Leaderboard data:', leaderboardData); // Debug log
         
         if (!leaderboardData) {
           throw new Error('No data received from server');

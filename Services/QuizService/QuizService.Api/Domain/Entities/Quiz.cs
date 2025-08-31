@@ -17,6 +17,8 @@ public class Quiz
     public Difficulty Difficulty { get; set; }
     public int TimeLimitSeconds { get; set; }
     public Guid CreatedByUserId { get; set; }
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
     public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
 }
 

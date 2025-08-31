@@ -13,7 +13,8 @@ import { QuizDto, QuestionDto, AnswerDto } from "../../models/Quiz";
 const questionTypeOptions = [
   { value: 0, label: "Single Choice" },
   { value: 1, label: "Multiple Choice" },
-  { value: 2, label: "Fill In The Blank" },
+  { value: 2, label: "True/False" },
+  { value: 3, label: "Fill In The Blank" },
 ];
 
 const QuizEdit: React.FC = () => {
@@ -249,13 +250,13 @@ const QuizEdit: React.FC = () => {
           <div style={{ marginTop: 8 }}>
             <h4 style={{ margin: 0, marginBottom: 8 }}>Answers</h4>
             {(q.answers || []).map((a) => (
-              <div key={a.id} style={{ display: "grid", gridTemplateColumns: q.questionType === 2 ? "1fr 100px" : "1fr 160px 100px", gap: 8, alignItems: "center", marginBottom: 8 }}>
+              <div key={a.id} style={{ display: "grid", gridTemplateColumns: (q.questionType === 2 || q.questionType === 3) ? "1fr 100px" : "1fr 160px 100px", gap: 8, alignItems: "center", marginBottom: 8 }}>
                 <input
                   value={a.text}
-                  placeholder={q.questionType === 2 ? "Expected text answer" : "Answer option"}
+                  placeholder={q.questionType === 2 ? "True/False option" : q.questionType === 3 ? "Expected text answer" : "Answer option"}
                   onChange={(e) => setQuiz(prev => prev ? { ...prev, questions: prev.questions?.map(qq => qq.id === q.id ? { ...qq, answers: qq.answers.map(aa => aa.id === a.id ? { ...aa, text: e.target.value } : aa) } : qq) } : prev)}
                 />
-                {q.questionType !== 2 && (
+                {(q.questionType !== 2 && q.questionType !== 3) && (
                   <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <input
                       type={q.questionType === 0 ? "radio" : "checkbox"}

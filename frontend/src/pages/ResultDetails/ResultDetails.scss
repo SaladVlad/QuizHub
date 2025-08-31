@@ -178,6 +178,71 @@
             }
           }
         }
+
+        .fill-in-result {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          
+          .correct-answers {
+            padding: 0.75rem 1rem;
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.2);
+            border-radius: $border-radius-sm;
+            color: $success-color;
+            
+            strong {
+              margin-right: 0.5rem;
+            }
+            
+            .separator {
+              margin: 0 0.25rem;
+              color: $text-muted;
+            }
+            
+            .correct-answer {
+              background: rgba(40, 167, 69, 0.2);
+              padding: 0.25rem 0.5rem;
+              border-radius: 4px;
+              font-weight: $font-weight-semibold;
+            }
+          }
+          
+          .user-answer {
+            padding: 0.75rem 1rem;
+            border-radius: $border-radius-sm;
+            
+            strong {
+              margin-right: 0.5rem;
+            }
+            
+            .given-answer {
+              font-weight: $font-weight-semibold;
+              padding: 0.25rem 0.5rem;
+              border-radius: 4px;
+              margin-left: 0.25rem;
+              
+              &.correct {
+                background: rgba(40, 167, 69, 0.2);
+                color: $success-color;
+                border: 1px solid rgba(40, 167, 69, 0.3);
+              }
+              
+              &.incorrect {
+                background: rgba(220, 53, 69, 0.2);
+                color: $danger-color;
+                border: 1px solid rgba(220, 53, 69, 0.3);
+              }
+              
+              &.no-answer {
+                background: rgba(108, 117, 125, 0.2);
+                color: $text-muted;
+                border: 1px solid rgba(108, 117, 125, 0.3);
+                font-style: italic;
+              }
+            }
+          }
+        }
       }
 
       .given {
@@ -191,6 +256,14 @@
         em {
           font-weight: $font-weight-semibold;
           font-style: normal;
+          
+          &.no-answer {
+            background: rgba(108, 117, 125, 0.2);
+            color: $text-muted;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            border: 1px solid rgba(108, 117, 125, 0.3);
+          }
         }
       }
     }

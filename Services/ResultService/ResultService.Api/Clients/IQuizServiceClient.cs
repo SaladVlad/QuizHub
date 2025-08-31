@@ -6,7 +6,7 @@ namespace ResultService.Api.Clients;
 
 public interface IQuizServiceClient
 {
-    Task<ServiceResult<QuizWithQuestionsDto>> GetQuizWithQuestionsAsync(Guid quizId);
-    Task<QuizDto?> GetQuizAsync(Guid quizId);
-    Task<Dictionary<Guid, QuizDto>> GetQuizzesBatchAsync(IEnumerable<Guid> quizIds);
+    Task<ServiceResult<QuizWithQuestionsDto>> GetQuizWithQuestionsAsync(Guid quizId, bool includeDeleted = false);
+    Task<QuizDto?> GetQuizAsync(Guid quizId, bool includeDeleted = false);
+    Task<Dictionary<Guid, QuizDto>> GetQuizzesBatchAsync(IEnumerable<Guid> quizIds, bool includeDeleted = false);
 }

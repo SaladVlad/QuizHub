@@ -6,8 +6,8 @@ namespace QuizService.Api.Services;
 
 public interface IQuizService
 {
-    Task<ServiceResult<QuizResponseDto>> GetQuizByIdAsync(Guid id);
-    Task<ServiceResult<QuizWithQuestionsDto>> GetQuizWithQuestionsAsync(Guid id);
+    Task<ServiceResult<QuizResponseDto>> GetQuizByIdAsync(Guid id, bool includeDeleted = false);
+    Task<ServiceResult<QuizWithQuestionsDto>> GetQuizWithQuestionsAsync(Guid id, bool includeDeleted = false);
     Task<ServiceResult<List<QuizResponseDto>>> GetAllQuizzesAsync(int page = 1, int pageSize = 10);
     Task<ServiceResult<List<QuizResponseDto>>> GetQuizzesByCategoryAsync(string category, int page = 1, int pageSize = 10);
     Task<ServiceResult<QuizResponseDto>> CreateQuizAsync(CreateQuizRequestDto createQuizDto, Guid createdByUserId);

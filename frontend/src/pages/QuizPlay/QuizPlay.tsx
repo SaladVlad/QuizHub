@@ -74,9 +74,21 @@ const QuizPlay: React.FC<QuizPlayProps> = () => {
         ) && userAnswer.length === correctAnswers.length;
         return allCorrect ? score + questionPoints : score;
       } else {
-        // For single choice, true/false, and fill in the blank
-        const selectedAnswer = question.answers.find(a => a.id === userAnswer);
-        return selectedAnswer?.isCorrect ? score + questionPoints : score;
+        if (question.questionType === 3) {
+          const isCorrect = question.answers.some(a => 
+            a.isCorrect && 
+            a.text.toLowerCase() === (userAnswer as string).toLowerCase()
+          );
+          return isCorrect ? score + questionPoints : score;
+        } else if (question.questionType === 2) {
+          const isCorrect = question.answers.some(a => 
+            a.isCorrect && a.text === userAnswer
+          );
+          return isCorrect ? score + questionPoints : score;
+        } else {
+          const selectedAnswer = question.answers.find(a => a.id === userAnswer);
+          return selectedAnswer?.isCorrect ? score + questionPoints : score;
+        }
       }
     }, 0);
   }, [questions]);
@@ -146,29 +158,28 @@ const QuizPlay: React.FC<QuizPlayProps> = () => {
     return () => clearTimeout(timerId);
   }, [started, timeLeft, submittedResult, handleSubmit]);
 
-  // Handle answer selection
   const handleAnswerSelect = useCallback((question: QuestionDto, answer: AnswerDto) => {
     setAnswers(prev => {
       const currentAnswers = { ...prev };
       const questionId = question.id;
       
       switch (question.questionType) {
-        case 0: // Single Choice
+        case 0:
           currentAnswers[questionId] = answer.id;
           break;
           
-        case 1: // Multiple Choice
+        case 1:
           const current = (currentAnswers[questionId] as string[]) || [];
           currentAnswers[questionId] = current.includes(answer.id)
             ? current.filter(id => id !== answer.id)
             : [...current, answer.id];
           break;
           
-        case 2: // True/False
+        case 2:
           currentAnswers[questionId] = answer.text;
           break;
           
-        case 3: // Fill in the blank
+        case 3:
           currentAnswers[questionId] = answer.text;
           break;
       }
@@ -179,7 +190,6 @@ const QuizPlay: React.FC<QuizPlayProps> = () => {
     setHasInteracted(true);
   }, []);
 
-  // Handle fill in the blank input
   const handleFillInTheBlank = useCallback((question: QuestionDto, text: string) => {
     setAnswers(prev => ({
       ...prev,
@@ -188,12 +198,11 @@ const QuizPlay: React.FC<QuizPlayProps> = () => {
     setHasInteracted(true);
   }, []);
 
-  // Render answer options based on question type
   const renderAnswerOptions = (question: QuestionDto) => {
     const selectedAnswer = answers[question.id];
     
     switch (question.questionType) {
-      case 0: // Single Choice
+      case 0:
         return (
           <div className="answer-list">
             {question.answers.map(answer => (
@@ -213,7 +222,7 @@ const QuizPlay: React.FC<QuizPlayProps> = () => {
           </div>
         );
         
-      case 1: // Multiple Choice
+      case 1:
         const selectedIds = (selectedAnswer as string[]) || [];
         return (
           <div className="answer-list">
@@ -233,7 +242,7 @@ const QuizPlay: React.FC<QuizPlayProps> = () => {
           </div>
         );
         
-      case 2: // True/False
+      case 2:
         return (
           <div className="answer-list">
             {question.answers.map(answer => (
@@ -249,7 +258,7 @@ const QuizPlay: React.FC<QuizPlayProps> = () => {
           </div>
         );
         
-      case 3: // Fill in the blank
+      case 3:
         return (
           <input
             type="text"

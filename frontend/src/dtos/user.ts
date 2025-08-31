@@ -12,7 +12,10 @@ export interface UpdateUserRequestDto {
   userId: string
   username?: string
   email?: string
+  firstName?: string
+  lastName?: string
   avatarImage?: File
+  removeImage?: boolean
 }
 
 export interface ResetPasswordRequestDto {

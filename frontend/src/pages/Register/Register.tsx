@@ -82,17 +82,21 @@ const Register: React.FC = () => {
       [name]: value,
     }));
 
-    // Validate field and update field errors
+    // Clear general error if user starts typing
+    if (error) {
+      setError("");
+    }
+  };
+
+  const handleFieldBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    // Validate field and update field errors on blur
     const fieldError = validateField(name, value);
     setFieldErrors((prev) => ({
       ...prev,
       [name]: fieldError,
     }));
-
-    // Clear general error if user starts typing
-    if (error) {
-      setError("");
-    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -195,6 +199,7 @@ const Register: React.FC = () => {
             placeholder="Choose a username"
             value={formData.username}
             onChange={handleChange}
+            onBlur={handleFieldBlur}
             required
             disabled={isLoading}
             className={fieldErrors.username ? 'error' : ''}
@@ -211,6 +216,7 @@ const Register: React.FC = () => {
             placeholder="Enter your email"
             value={formData.email}
             onChange={handleChange}
+            onBlur={handleFieldBlur}
             required
             disabled={isLoading}
             className={fieldErrors.email ? 'error' : ''}
@@ -228,6 +234,7 @@ const Register: React.FC = () => {
               placeholder="Enter your first name"
               value={formData.firstName}
               onChange={handleChange}
+              onBlur={handleFieldBlur}
               required
               disabled={isLoading}
               className={fieldErrors.firstName ? 'error' : ''}
@@ -243,6 +250,7 @@ const Register: React.FC = () => {
               placeholder="Enter your last name"
               value={formData.lastName}
               onChange={handleChange}
+              onBlur={handleFieldBlur}
               required
               disabled={isLoading}
               className={fieldErrors.lastName ? 'error' : ''}
@@ -297,6 +305,7 @@ const Register: React.FC = () => {
             placeholder="Create a password (min 6 characters)"
             value={formData.password}
             onChange={handleChange}
+            onBlur={handleFieldBlur}
             required
             disabled={isLoading}
             className={fieldErrors.password ? 'error' : ''}
@@ -313,6 +322,7 @@ const Register: React.FC = () => {
             placeholder="Confirm your password"
             value={formData.confirmPassword}
             onChange={handleChange}
+            onBlur={handleFieldBlur}
             required
             disabled={isLoading}
             className={fieldErrors.confirmPassword ? 'error' : ''}

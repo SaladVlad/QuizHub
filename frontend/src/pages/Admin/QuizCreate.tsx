@@ -69,17 +69,24 @@ const QuizCreate: React.FC = () => {
       [name]: processedValue,
     }));
 
-    // Validate field and update field errors
+    // Clear general error if user starts typing
+    if (error) {
+      setError("");
+    }
+  };
+
+  const handleFieldBlur = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target as HTMLInputElement;
+    const processedValue = name === "difficulty" || name === "timeLimitSeconds" ? Number(value) : value;
+
+    // Validate field and update field errors on blur
     const fieldError = validateField(name, processedValue);
     setFieldErrors((prev) => ({
       ...prev,
       [name]: fieldError,
     }));
-
-    // Clear general error if user starts typing
-    if (error) {
-      setError("");
-    }
   };
 
   const validateAllFields = (): boolean => {
@@ -153,6 +160,7 @@ const QuizCreate: React.FC = () => {
                 placeholder="Enter quiz title"
                 value={form.title}
                 onChange={handleChange}
+                onBlur={handleFieldBlur}
                 required
                 disabled={isSubmitting}
                 className={fieldErrors.title ? 'error' : ''}
@@ -168,6 +176,7 @@ const QuizCreate: React.FC = () => {
                 placeholder="Optional description"
                 value={form.description}
                 onChange={handleChange}
+                onBlur={handleFieldBlur}
                 rows={3}
                 disabled={isSubmitting}
                 className={fieldErrors.description ? 'error' : ''}
@@ -184,6 +193,7 @@ const QuizCreate: React.FC = () => {
                 placeholder="Enter category"
                 value={form.category}
                 onChange={handleChange}
+                onBlur={handleFieldBlur}
                 disabled={isSubmitting}
                 className={fieldErrors.category ? 'error' : ''}
               />
@@ -215,6 +225,7 @@ const QuizCreate: React.FC = () => {
                   step={30}
                   value={form.timeLimitSeconds}
                   onChange={handleChange}
+                  onBlur={handleFieldBlur}
                   disabled={isSubmitting}
                   className={fieldErrors.timeLimitSeconds ? 'error' : ''}
                 />

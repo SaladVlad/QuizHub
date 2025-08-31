@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import "./QuizList.scss";
-import { getQuizzes } from "../../services/quizService";
+import { getQuizzes, deleteQuiz } from "../../services/quizService";
 import { QuizDto } from "../../models/Quiz";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
@@ -103,6 +103,20 @@ const QuizList: React.FC = () => {
   // Check if any filters are active
   const hasActiveFilters =
     searchTerm || selectedCategory || selectedDifficulty > 0;
+
+  const handleDeleteQuiz = async (quizId: string, quizTitle: string) => {
+    if (window.confirm(`Are you sure you want to delete "${quizTitle}"? This cannot be undone.`)) {
+      try {
+        await deleteQuiz(quizId);
+        // Refresh the quiz list
+        const data = await getQuizzes({ page: 1, pageSize: 12 });
+        const list = Array.isArray(data) ? data : data?.items ?? [];
+        setQuizzes(list);
+      } catch (e: any) {
+        setError(e.message || "Failed to delete quiz");
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -253,12 +267,20 @@ const QuizList: React.FC = () => {
                     Start Quiz
                   </button>
                   {isAdmin(user) && (
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => navigate(`/admin/quizzes/${quiz.id}/edit`)}
-                    >
-                      Edit
-                    </button>
+                    <>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => navigate(`/admin/quizzes/${quiz.id}/edit`)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleDeleteQuiz(quiz.id, quiz.title)}
+                      >
+                        Delete
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

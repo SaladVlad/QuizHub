@@ -28,11 +28,16 @@ public class QuizServiceClient : IQuizServiceClient
         _httpClient.BaseAddress = new Uri(_options.BaseUrl);
     }
 
-    public async Task<ServiceResult<QuizWithQuestionsDto>> GetQuizWithQuestionsAsync(Guid quizId)
+    public async Task<ServiceResult<QuizWithQuestionsDto>> GetQuizWithQuestionsAsync(Guid quizId, bool includeDeleted = false)
     {
         try
         {
-            var response = await _httpClient.GetAsync($"api/quizzes/{quizId}/with-questions");
+            var url = $"api/quizzes/{quizId}/with-questions";
+            if (includeDeleted)
+            {
+                url += "?includeDeleted=true";
+            }
+            var response = await _httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
@@ -56,11 +61,16 @@ public class QuizServiceClient : IQuizServiceClient
         }
     }
 
-    public async Task<QuizDto?> GetQuizAsync(Guid quizId)
+    public async Task<QuizDto?> GetQuizAsync(Guid quizId, bool includeDeleted = false)
     {
         try
         {
-            var response = await _httpClient.GetAsync($"api/quizzes/{quizId}");
+            var url = $"api/quizzes/{quizId}";
+            if (includeDeleted)
+            {
+                url += "?includeDeleted=true";
+            }
+            var response = await _httpClient.GetAsync(url);
             
             if (!response.IsSuccessStatusCode)
             {
@@ -84,7 +94,7 @@ public class QuizServiceClient : IQuizServiceClient
         }
     }
 
-    public async Task<Dictionary<Guid, QuizDto>> GetQuizzesBatchAsync(IEnumerable<Guid> quizIds)
+    public async Task<Dictionary<Guid, QuizDto>> GetQuizzesBatchAsync(IEnumerable<Guid> quizIds, bool includeDeleted = false)
     {
         var result = new Dictionary<Guid, QuizDto>();
         
@@ -95,7 +105,7 @@ public class QuizServiceClient : IQuizServiceClient
 
         foreach (var quizId in quizIds.Distinct())
         {
-            var quiz = await GetQuizAsync(quizId);
+            var quiz = await GetQuizAsync(quizId, includeDeleted);
             if (quiz != null)
             {
                 result[quizId] = quiz;

@@ -24,9 +24,9 @@ public class QuizzesController : ControllerBase
 
     [HttpGet("{id}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetQuizById(Guid id)
+    public async Task<IActionResult> GetQuizById(Guid id, [FromQuery] bool includeDeleted = false)
     {
-        var result = await _quizService.GetQuizByIdAsync(id);
+        var result = await _quizService.GetQuizByIdAsync(id, includeDeleted);
         if (!result.Success)
         {
             return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
@@ -36,9 +36,9 @@ public class QuizzesController : ControllerBase
     
     [HttpGet("{id}/with-questions")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetQuizWithQuestions(Guid id)
+    public async Task<IActionResult> GetQuizWithQuestions(Guid id, [FromQuery] bool includeDeleted = false)
     {
-        var result = await _quizService.GetQuizWithQuestionsAsync(id);
+        var result = await _quizService.GetQuizWithQuestionsAsync(id, includeDeleted);
         if (!result.Success)
         {
             return StatusCode(result.StatusCode, new { message = result.ErrorMessage });

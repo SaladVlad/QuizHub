@@ -75,6 +75,15 @@ export const updateUser = async (
   formData.append('userId', userData.userId!)
   formData.append('username', userData.username!)
   formData.append('email', userData.email!)
+  if (userData.firstName) {
+    formData.append('firstName', userData.firstName)
+  }
+  if (userData.lastName) {
+    formData.append('lastName', userData.lastName)
+  }
+  if (userData.removeImage) {
+    formData.append('removeImage', 'true')
+  }
   if (userData.avatarImage) {
     formData.append('avatarImage', userData.avatarImage)
   }
