@@ -146,7 +146,6 @@ const ResultDetails: React.FC = () => {
               </div>
               <div className="q-answers">
                 {isFillIn ? (
-                  // For fill-in questions, show the correct answers and user's answer differently
                   <div className="fill-in-result">
                     <div className="correct-answers">
                       <strong>Correct answers:</strong>
@@ -173,7 +172,6 @@ const ResultDetails: React.FC = () => {
                     )}
                   </div>
                 ) : (
-                  // For other question types (single choice, multiple choice, true/false)
                   q.answers.map((a) => {
                     const isCorrect = !!a.isCorrect;
                     const userSelected = isMultiple
