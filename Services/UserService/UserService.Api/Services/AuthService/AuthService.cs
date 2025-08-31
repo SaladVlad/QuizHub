@@ -31,6 +31,8 @@ public class AuthService : IAuthService
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
             Role = user.Role
         };
     }
@@ -56,6 +58,8 @@ public class AuthService : IAuthService
             Id = Guid.NewGuid(),
             Username = request.Username,
             Email = request.Email,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
             PasswordHash = hash,
             PasswordSalt = salt,
             Role = "User",
@@ -70,6 +74,8 @@ public class AuthService : IAuthService
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
             Role = user.Role
         };
     }

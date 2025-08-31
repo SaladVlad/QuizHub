@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using UserService.Api.Data;
 using UserService.Api.Dtos.Requests;
 using UserService.Api.Dtos.Results;
@@ -20,21 +20,23 @@ public class UserService : IUserService
         _userValidationService = userValidationService;
     }
 
-    public async Task<ServiceResult<List<UserDto>>> GetAllUsers(bool includeImages = false)
+    public async Task<ServiceResult<List<UserDto>?>> GetAllUsers(bool includeImage = false)
     {
         var users = await _context.Users.Select(user => new UserDto
         {
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
             Role = user.Role,
-            AvatarImage = includeImages ? user.AvatarImage : null
+            AvatarImage = includeImage ? user.AvatarImage : null
         }).ToListAsync();
 
-        return ServiceResult<List<UserDto>>.Ok(users);
+        return ServiceResult<List<UserDto>?>.Ok(users);
     }
 
-    public async Task<ServiceResult<UserDto>> GetById(Guid id, bool includeImage)
+    public async Task<ServiceResult<UserDto>> GetById(Guid id, bool includeImage = false)
     {
         var user = await _context.Users
             .Where(u => u.Id == id)
@@ -43,17 +45,21 @@ public class UserService : IUserService
                 Id = u.Id,
                 Username = u.Username,
                 Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Role = u.Role,
                 AvatarImage = includeImage ? u.AvatarImage : null 
             })
             .FirstOrDefaultAsync();
 
-        return user == null
-            ? ServiceResult<UserDto>.Fail("User not found.")
-            : ServiceResult<UserDto>.Ok(user);
+        if (user == null)
+        {
+            return ServiceResult<UserDto>.Fail("User not found.");
+        }
+        return ServiceResult<UserDto>.Ok(user);
     }
 
-    public async Task<ServiceResult<UserDto>> GetByUsername(string username, bool includeImage)
+    public async Task<ServiceResult<UserDto?>> GetByUsername(string username, bool includeImage)
     {
         var user = await _context.Users
             .Where(u => u.Username == username)
@@ -62,17 +68,19 @@ public class UserService : IUserService
                 Id = u.Id,
                 Username = u.Username,
                 Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Role = u.Role,
                 AvatarImage = includeImage ? u.AvatarImage : null
             })
             .FirstOrDefaultAsync();
 
         return user == null
-            ? ServiceResult<UserDto>.Fail("User not found.")
-            : ServiceResult<UserDto>.Ok(user);
+            ? ServiceResult<UserDto?>.Ok(null)
+            : ServiceResult<UserDto?>.Ok(user);
     }
 
-    public async Task<ServiceResult<UserDto>> GetByEmail(string email, bool includeImage)
+    public async Task<ServiceResult<UserDto?>> GetByEmail(string email, bool includeImage)
     {
         var user = await _context.Users
             .Where(u => u.Email == email)
@@ -81,14 +89,16 @@ public class UserService : IUserService
                 Id = u.Id,
                 Username = u.Username,
                 Email = u.Email,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Role = u.Role,
                 AvatarImage = includeImage ? u.AvatarImage : null
             })
             .FirstOrDefaultAsync();
 
         return user == null
-            ? ServiceResult<UserDto>.Fail("User not found.")
-            : ServiceResult<UserDto>.Ok(user);
+            ? ServiceResult<UserDto?>.Ok(null)
+            : ServiceResult<UserDto?>.Ok(user);
     }
 
     public async Task<ServiceResult> UpdateUserInfo(UpdateUserRequestDto request)
@@ -111,15 +121,18 @@ public class UserService : IUserService
 
         if (!string.IsNullOrWhiteSpace(request.Email)) user.Email = request.Email;
         if (!string.IsNullOrWhiteSpace(request.Username)) user.Username = request.Username;
-        if (request.AvatarImage != null && request.AvatarImage.Length > 0)
+        if (!string.IsNullOrWhiteSpace(request.FirstName)) user.FirstName = request.FirstName;
+        if (!string.IsNullOrWhiteSpace(request.LastName)) user.LastName = request.LastName;
+        // Handle avatar image update/removal        
+        if (request.RemoveImage)
+        {
+            user.AvatarImage = Array.Empty<byte>();
+        }
+        else if (request.AvatarImage != null && request.AvatarImage.Length > 0)
         {
             using var ms = new MemoryStream();
             await request.AvatarImage.CopyToAsync(ms);
             user.AvatarImage = ms.ToArray();
-        }
-        else
-        {
-            user.AvatarImage = null; // Clear the image if not provided
         }
 
         await _context.SaveChangesAsync();

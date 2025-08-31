@@ -5,21 +5,31 @@ import {
   updateUser,
   resetPassword,
 } from "../../services/userService";
-import { ResetPasswordRequestDto, UserDto } from "../../models/UserDtos";
+import { ResetPasswordRequestDto, UserDto } from "../../dtos/user";
 import "./Profile.scss";
+import Loading from "../../components/Loading/Loading";
 
 const Profile: React.FC = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, updateUser: updateAuthUser } = useAuth();
   const [user, setUser] = useState<UserDto | null>(null);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [formData, setFormData] = useState<{ username: string; email: string }>(
-    { username: "", email: "" }
-  );
+  const [formData, setFormData] = useState<{ 
+    username: string; 
+    email: string; 
+    firstName: string; 
+    lastName: string; 
+  }>({
+    username: "", 
+    email: "", 
+    firstName: "", 
+    lastName: ""
+  });
   const [avatarImage, setAvatarImage] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [passwordData, setPasswordData] = useState({
@@ -33,15 +43,20 @@ const Profile: React.FC = () => {
       try {
         const fullUser = await getUserById(authUser.id, true);
         setUser(fullUser);
-        setFormData({ username: fullUser.username, email: fullUser.email });
+        setFormData({ 
+          username: fullUser.username, 
+          email: fullUser.email,
+          firstName: fullUser.firstName,
+          lastName: fullUser.lastName
+        });
 
-        if (fullUser.avatarImage) {
+        if (fullUser.avatarImage && fullUser.avatarImage.length > 0) {
           const isBase64 = fullUser.avatarImage.startsWith("data:");
-          setAvatarPreview(
-            isBase64
-              ? fullUser.avatarImage
-              : `data:image/png;base64,${fullUser.avatarImage}`
-          );
+          const imageUrl = isBase64
+            ? fullUser.avatarImage
+            : `data:image/png;base64,${fullUser.avatarImage}`;
+          // Add timestamp to prevent caching issues
+          setAvatarPreview(`${imageUrl}#${Date.now()}`);
         } else {
           setAvatarPreview(null);
         }
@@ -80,6 +95,7 @@ const Profile: React.FC = () => {
     }
 
     setAvatarImage(file);
+    setRemoveImage(false);
     setError("");
 
     const reader = new FileReader();
@@ -90,22 +106,42 @@ const Profile: React.FC = () => {
   const handleRemoveImage = () => {
     setAvatarImage(null);
     setAvatarPreview(null);
+    setRemoveImage(true);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleProfileSave = async () => {
-    if (!user) return;
+    if (!authUser) return;
     try {
       setError("");
       setSuccess("");
       await updateUser({
-        userId: user.id,
+        userId: authUser.id,
         username: formData.username,
         email: formData.email,
-        avatarImage: avatarImage || undefined,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        avatarImage: removeImage ? undefined : (avatarImage || undefined),
+        removeImage: removeImage,
       });
       setSuccess("Profile updated successfully.");
       setEditing(false);
+      setRemoveImage(false);
+      
+      // Refresh user data to update avatar preview
+      const updatedUser = await getUserById(authUser.id, true);
+      setUser(updatedUser);
+      updateAuthUser(updatedUser); // Update the auth context too
+      if (updatedUser.avatarImage && updatedUser.avatarImage.length > 0) {
+        const isBase64 = updatedUser.avatarImage.startsWith("data:");
+        const imageUrl = isBase64
+          ? updatedUser.avatarImage
+          : `data:image/png;base64,${updatedUser.avatarImage}`;
+        // Add timestamp to force refresh
+        setAvatarPreview(`${imageUrl}#${Date.now()}`);
+      } else {
+        setAvatarPreview(null);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to update profile");
     }
@@ -134,123 +170,186 @@ const Profile: React.FC = () => {
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="container">
-        <p>Loading profile...</p>
+      <div className="page-container">
+        <Loading />
       </div>
     );
+  }
 
   return (
-    <div className="container profile">
-      <h1>My Profile</h1>
+    <div className="page-container">
+      <div className="page-header">
+        <h1>My Profile</h1>
+        <p>Manage your account settings and personal information</p>
+      </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
+      {error && <div className="message error-message">{error}</div>}
+      {success && <div className="message success-message">{success}</div>}
 
       <div className="card">
-        <div className="form-group">
-          <div className="avatar-upload">
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              disabled={!editing}
-              className="avatar-input"
-              id="avatarUpload"
+        <div className="card-body">
+        <div className="avatar-upload">
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            disabled={!editing}
+            className="avatar-input"
+            id="avatarUpload"
+          />
+          <label
+            htmlFor="avatarUpload"
+            className="avatar-preview-wrapper"
+            style={{ cursor: editing ? 'pointer' : 'default' }}
+          >
+            <img
+              src={avatarPreview || "/default-avatar.png"}
+              alt="Profile"
+              className="profile-avatar"
             />
-            <label
-              htmlFor="avatarUpload"
-              className={`avatar-preview-wrapper ${editing ? "clickable" : ""}`}
+            {editing && <div className="avatar-overlay">Change</div>}
+          </label>
+          
+          {avatarPreview && editing && (
+            <button
+              type="button"
+              className="remove-image"
+              onClick={handleRemoveImage}
             >
-              <img
-                src={avatarPreview || "/default-avatar.png"}
-                alt="Avatar"
-                className="profile-avatar"
-              />
-              {editing && (
-                <div className="avatar-overlay">
-                  <span>Change</span>
-                </div>
-              )}
-            </label>
-            {avatarPreview && editing && (
-              <button
-                type="button"
-                className="remove-image"
-                onClick={handleRemoveImage}
-              >
-                Remove
-              </button>
-            )}
-          </div>
+              Remove Photo
+            </button>
+          )}
         </div>
 
         <div className="form-group">
-          <label>Username</label>
+          <label htmlFor="username">Username</label>
           <input
+            id="username"
             type="text"
             name="username"
             value={formData.username}
             disabled={!editing}
             onChange={handleChange}
+            placeholder="Enter your username"
           />
         </div>
 
         <div className="form-group">
-          <label>Email</label>
+          <label htmlFor="email">Email</label>
           <input
+            id="email"
             type="email"
             name="email"
             value={formData.email}
             disabled={!editing}
             onChange={handleChange}
+            placeholder="Enter your email"
           />
         </div>
 
-        {editing ? (
-          <button className="btn btn-primary mt-4" onClick={handleProfileSave}>
-            Save Changes
-          </button>
-        ) : (
-          <button className="btn btn-secondary mt-4" onClick={handleEditToggle}>
-            Edit Profile
-          </button>
-        )}
-      </div>
+        <div className="form-group">
+          <label htmlFor="firstName">First Name</label>
+          <input
+            id="firstName"
+            type="text"
+            name="firstName"
+            value={formData.firstName}
+            disabled={!editing}
+            onChange={handleChange}
+            placeholder="Enter your first name"
+          />
+        </div>
 
-      <div className="card mt-4">
-        <h2>Reset Password</h2>
         <div className="form-group">
-          <label>New Password</label>
+          <label htmlFor="lastName">Last Name</label>
           <input
-            type="password"
-            value={passwordData.newPassword}
-            onChange={(e) =>
-              setPasswordData((prev) => ({
-                ...prev,
-                newPassword: e.target.value,
-              }))
-            }
+            id="lastName"
+            type="text"
+            name="lastName"
+            value={formData.lastName}
+            disabled={!editing}
+            onChange={handleChange}
+            placeholder="Enter your last name"
           />
         </div>
-        <div className="form-group">
-          <label>Confirm Password</label>
-          <input
-            type="password"
-            value={passwordData.confirmPassword}
-            onChange={(e) =>
-              setPasswordData((prev) => ({
-                ...prev,
-                confirmPassword: e.target.value,
-              }))
-            }
-          />
+
+        <div className="actions">
+          {!editing ? (
+            <button 
+              className="primary" 
+              onClick={handleEditToggle}
+            >
+              Edit Profile
+            </button>
+          ) : (
+            <>
+              <button 
+                className="primary" 
+                onClick={handleProfileSave}
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button 
+                className="secondary" 
+                onClick={() => setEditing(false)}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+            </>
+          )}
         </div>
-        <button className="btn btn-primary mt-4" onClick={handlePasswordReset}>
-          Change Password
-        </button>
+
+        <div className="password-section">
+          <h2>Change Password</h2>
+          <div className="form-group">
+            <label htmlFor="newPassword">New Password</label>
+            <input
+              id="newPassword"
+              type="password"
+              value={passwordData.newPassword}
+              onChange={(e) =>
+                setPasswordData({
+                  ...passwordData,
+                  newPassword: e.target.value,
+                })
+              }
+              placeholder="Enter new password"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={passwordData.confirmPassword}
+              onChange={(e) =>
+                setPasswordData({
+                  ...passwordData,
+                  confirmPassword: e.target.value,
+                })
+              }
+              placeholder="Confirm new password"
+            />
+          </div>
+          <div className="actions">
+            <button
+              className="primary"
+              onClick={handlePasswordReset}
+              disabled={
+                !passwordData.newPassword ||
+                passwordData.newPassword !== passwordData.confirmPassword
+              }
+            >
+              Change Password
+            </button>
+          </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,27 +1,6 @@
 import { API_BASE_URL } from '../api'
-import {
-  UserDto,
-  UpdateUserRequestDto,
-  ResetPasswordRequestDto,
-  ApiError
-} from '../models/UserDtos'
-
-const handleApiError = async (response: Response): Promise<never> => {
-  let errorData: ApiError = { message: 'An unexpected error occurred' }
-  try {
-    const data = await response.json()
-    errorData = {
-      message: data.message || response.statusText,
-      errors: data.errors
-    }
-  } catch {
-    errorData.message = response.statusText || 'Network error'
-  }
-  const error = new Error(errorData.message) as Error & ApiError
-  error.status = response.status
-  if (errorData.errors) error.errors = errorData.errors
-  throw error
-}
+import { UserDto, UpdateUserRequestDto, ResetPasswordRequestDto } from '../dtos/user'
+import { buildHeaders, handleApiError } from '../utils/http'
 
 export const getAllUsers = async (
   includeImages = false
@@ -30,7 +9,7 @@ export const getAllUsers = async (
     `${API_BASE_URL}/users?includeImages=${includeImages}`,
     {
       method: 'GET',
-      headers: { Authorization: `Bearer ${localStorage.getItem('jwt')}` },
+      headers: buildHeaders(true),
       credentials: 'include'
     }
   )
@@ -46,7 +25,7 @@ export const getUserById = async (
     `${API_BASE_URL}/users/${id}?includeImage=${includeImage}`,
     {
       method: 'GET',
-      headers: { Authorization: `Bearer ${localStorage.getItem('jwt')}` },
+      headers: buildHeaders(true),
       credentials: 'include'
     }
   )
@@ -62,7 +41,7 @@ export const getUserByUsername = async (
     `${API_BASE_URL}/users/by-username/${username}?includeImage=${includeImage}`,
     {
       method: 'GET',
-      headers: { Authorization: `Bearer ${localStorage.getItem('jwt')}` },
+      headers: buildHeaders(true),
       credentials: 'include'
     }
   )
@@ -78,7 +57,7 @@ export const getUserByEmail = async (
     `${API_BASE_URL}/users/by-email/${email}?includeImage=${includeImage}`,
     {
       method: 'GET',
-      headers: { Authorization: `Bearer ${localStorage.getItem('jwt')}` },
+      headers: buildHeaders(true),
       credentials: 'include'
     }
   )
@@ -96,14 +75,21 @@ export const updateUser = async (
   formData.append('userId', userData.userId!)
   formData.append('username', userData.username!)
   formData.append('email', userData.email!)
+  if (userData.firstName) {
+    formData.append('firstName', userData.firstName)
+  }
+  if (userData.lastName) {
+    formData.append('lastName', userData.lastName)
+  }
+  if (userData.removeImage) {
+    formData.append('removeImage', 'true')
+  }
   if (userData.avatarImage) {
     formData.append('avatarImage', userData.avatarImage)
   }
   const response = await fetch(`${API_BASE_URL}/users/update`, {
     method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('jwt')}`
-    },
+    headers: buildHeaders(false),
     body: formData,
     credentials: 'include'
   })
@@ -114,9 +100,7 @@ export const updateUser = async (
 export const promoteUserToAdmin = async (id: string): Promise<string> => {
   const response = await fetch(`${API_BASE_URL}/users/${id}/promote`, {
     method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('jwt')}`
-    },
+    headers: buildHeaders(false),
     credentials: 'include'
   })
   if (!response.ok) await handleApiError(response)
@@ -126,9 +110,7 @@ export const promoteUserToAdmin = async (id: string): Promise<string> => {
 export const deleteUser = async (id: string): Promise<string> => {
   const response = await fetch(`${API_BASE_URL}/users/${id}`, {
     method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('jwt')}`
-    },
+    headers: buildHeaders(false),
     credentials: 'include'
   })
   if (!response.ok) await handleApiError(response)
@@ -141,8 +123,8 @@ export const resetPassword = async (
   const response = await fetch(`${API_BASE_URL}/users/reset-password`, {
     method: 'PUT',
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('jwt')}`
+      ...buildHeaders(true),
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify(data),
     credentials: 'include'

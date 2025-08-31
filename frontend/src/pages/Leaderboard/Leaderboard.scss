@@ -1,26 +1,160 @@
-.leaderboard {
-  h1 {
-    margin-bottom: 1.5rem;
-    color: var(--color-primary);
-  }
+@use '../../styles/variables' as *;
 
-  .leaderboard-table {
+.error {
+  background-color: #fef2f2;
+  color: $danger-color;
+  padding: $spacing-md;
+  border-radius: $border-radius-md;
+  margin-bottom: $spacing-lg;
+  border-left: 4px solid $danger-color;
+  font-family: $font-family;
+  text-align: center;
+
+  button {
+    background: $danger-color;
+    color: $white;
+    border: none;
+    padding: $spacing-sm $spacing-md;
+    border-radius: $border-radius-sm;
+    margin-top: $spacing-sm;
+    cursor: pointer;
+    font-family: $font-family;
+    transition: $transition-base;
+
+    &:hover {
+      background: darken($danger-color, 10%);
+    }
+  }
+}
+
+.leaderboard-table {
+  overflow-x: auto;
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-sm;
+  border: 1px solid $border-color;
+
+  table {
     width: 100%;
     border-collapse: collapse;
+    font-family: $font-family;
 
-    th, td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid var(--color-border);
+    thead {
+      th {
+        background: $light-bg;
+        color: $text-dark;
+        font-weight: $font-weight-semibold;
+        padding: $spacing-lg $spacing-md;
+        text-align: left;
+        border-bottom: 2px solid $border-color;
+        font-family: $font-family;
+
+        &:first-child { 
+          width: 80px; 
+          text-align: center; 
+        }
+        &:nth-child(3) { 
+          width: 120px; 
+          text-align: center; 
+        }
+        &:nth-child(4) { 
+          width: 100px; 
+          text-align: center; 
+        }
+      }
     }
 
-    th {
-      background-color: var(--color-surface);
-      color: var(--text-secondary);
-    }
+    tbody {
+      tr {
+        transition: $transition-base;
 
-    tr:hover {
-      background-color: #f9fafb;
+        &:hover {
+          background: rgba($primary-color, 0.02);
+        }
+
+        &:not(:last-child) {
+          border-bottom: 1px solid rgba($border-color, 0.5);
+        }
+
+        td {
+          padding: $spacing-lg $spacing-md;
+          vertical-align: middle;
+          font-family: $font-family;
+
+          &.rank {
+            text-align: center;
+            font-weight: $font-weight-semibold;
+
+            .medal {
+              font-size: 1.5rem;
+              display: inline-block;
+              
+              &.rank-1 { 
+                color: #ffd700;
+                filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.4));
+              }
+              &.rank-2 { 
+                color: #c0c0c0;
+                filter: drop-shadow(0 0 3px rgba(192, 192, 192, 0.4));
+              }
+              &.rank-3 { 
+                color: #cd7f32;
+                filter: drop-shadow(0 0 3px rgba(205, 127, 50, 0.4));
+              }
+            }
+          }
+
+          &:nth-child(2) {
+            font-weight: $font-weight-medium;
+            color: $text-dark;
+          }
+
+          &.score {
+            text-align: center;
+            font-weight: $font-weight-semibold;
+            color: $primary-color;
+            font-size: 1.1rem;
+          }
+
+          &:nth-child(4) {
+            text-align: center;
+            color: $text-muted;
+            font-family: $font-family-mono;
+            font-size: 0.9rem;
+          }
+        }
+      }
     }
+  }
+
+  .no-results {
+    text-align: center;
+    padding: $spacing-xl * 2;
+    color: $text-muted;
+    font-family: $font-family;
+    
+    p {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .leaderboard-table {
+    table {
+      th, td {
+        padding: $spacing-md $spacing-sm;
+        font-size: 0.9rem;
+      }
+
+      .medal {
+        font-size: 1.2rem !important;
+      }
+    }
+  }
+
+  .error {
+    margin: 0 $spacing-md $spacing-lg;
   }
 }

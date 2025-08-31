@@ -1,0 +1,242 @@
+@use '../../styles/variables' as *;
+
+.admin-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xl;
+  padding-bottom: $spacing-lg;
+  border-bottom: 1px solid $border-color;
+
+  .search-container {
+    flex: 1;
+    max-width: 400px;
+
+    .search-input {
+      width: 100%;
+      padding: $spacing-md;
+      border: 1px solid $border-color;
+      border-radius: $border-radius-sm;
+      font-family: $font-family;
+      font-size: 1rem;
+      background: $white;
+      transition: $transition-base;
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
+      }
+    }
+  }
+
+  .stats {
+    color: $text-muted;
+    font-size: 0.9rem;
+    font-family: $font-family;
+    white-space: nowrap;
+  }
+
+  @media (max-width: $breakpoint-md) {
+    flex-direction: column;
+    gap: $spacing-md;
+    align-items: stretch;
+
+    .search-container {
+      max-width: none;
+    }
+  }
+}
+
+.results-table {
+  overflow-x: auto;
+  margin-bottom: $spacing-xl;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: $font-family;
+
+    th {
+      background: $light-bg;
+      color: $text-dark;
+      font-weight: $font-weight-semibold;
+      padding: $spacing-md;
+      text-align: left;
+      border-bottom: 2px solid $border-color;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: $spacing-md;
+      border-bottom: 1px solid rgba($border-color, 0.5);
+      vertical-align: top;
+    }
+
+    tr {
+      transition: $transition-base;
+
+      &:hover {
+        background: rgba($primary-color, 0.02);
+      }
+    }
+
+    .user-info {
+      .user-name {
+        font-weight: $font-weight-medium;
+        color: $text-dark;
+        margin-bottom: 2px;
+      }
+
+      .user-id {
+        font-family: $font-family-mono;
+        font-size: 0.8rem;
+        color: $text-muted;
+      }
+    }
+
+    .quiz-info {
+      .quiz-title {
+        font-weight: $font-weight-medium;
+        color: $text-dark;
+        margin-bottom: 2px;
+      }
+
+      .quiz-category {
+        font-size: 0.8rem;
+        color: $primary-color;
+        background: rgba($primary-color, 0.1);
+        padding: 2px 6px;
+        border-radius: $border-radius-sm;
+        display: inline-block;
+        font-weight: $font-weight-medium;
+      }
+    }
+
+    .score-info {
+      text-align: right;
+
+      .score-percentage {
+        font-size: 1.1rem;
+        font-weight: $font-weight-semibold;
+        color: $primary-color;
+      }
+
+      .score-points {
+        font-size: 0.85rem;
+        color: $text-muted;
+      }
+    }
+
+    .time-info {
+      font-family: $font-family-mono;
+      color: $text-muted;
+    }
+
+    .date-info {
+      font-size: 0.9rem;
+      color: $text-muted;
+      white-space: nowrap;
+    }
+
+    .actions {
+      .btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+
+        &.btn-sm {
+          padding: 0.375rem 0.625rem;
+          font-size: 0.8rem;
+        }
+
+        &.btn-outline {
+          background: transparent;
+          color: $primary-color;
+          border: 1px solid $primary-color;
+          text-decoration: none;
+
+          &:hover {
+            background: $primary-color;
+            color: $white;
+          }
+        }
+      }
+    }
+  }
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+
+  .btn {
+    padding: $spacing-sm $spacing-md;
+    font-size: 0.9rem;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .page-info {
+    color: $text-muted;
+    font-family: $font-family;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.no-results {
+  text-align: center;
+  padding: $spacing-xl;
+  color: $text-muted;
+  font-family: $font-family;
+
+  p {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+}
+
+.error-message {
+  background-color: #fef2f2;
+  color: $danger-color;
+  padding: $spacing-md;
+  border-radius: $border-radius-md;
+  margin-bottom: $spacing-lg;
+  border-left: 4px solid $danger-color;
+  font-family: $font-family;
+}
+
+@media (max-width: $breakpoint-md) {
+  .results-table {
+    table {
+      th,
+      td {
+        padding: $spacing-sm;
+        font-size: 0.9rem;
+      }
+
+      .quiz-info .quiz-title {
+        font-size: 0.9rem;
+      }
+
+      .score-info .score-percentage {
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    .page-info {
+      order: -1;
+    }
+  }
+}

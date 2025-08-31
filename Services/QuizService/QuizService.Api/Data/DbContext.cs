@@ -7,7 +7,7 @@ public class QuizDbContext : DbContext
 {
     public QuizDbContext(DbContextOptions<QuizDbContext> options) : base(options) { }
 
-    public DbSet<Quiz> Users => Set<Quiz>();
+    public DbSet<Quiz> Quizzes => Set<Quiz>();
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<Answer> Answers => Set<Answer>();
 }

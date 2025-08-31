@@ -1,0 +1,32 @@
+@use '../styles/variables' as *;
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: $font-family;
+}
+
+.main-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  margin-top: 64px; // navbar height
+  padding: 2rem 1.5rem;
+  background-color: #f4f4f6;
+  min-height: calc(100vh - 64px);
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1.5rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 1rem 0.75rem;
+  }
+}

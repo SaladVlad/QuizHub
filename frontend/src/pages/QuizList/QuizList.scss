@@ -1,28 +1,392 @@
-@use "../../index.css" as *;
+@use '../../styles/variables' as *;
 
-.quiz-list {
-  h1 {
+// Search and filters
+.search-bar {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 2rem;
+  background: $white;
+  padding: 1.5rem;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-sm;
+  border: 1px solid $border-color;
+
+  .search-container {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+
+    .text-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: $text-muted;
+      pointer-events: none;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.8rem 1rem 0.8rem 3rem;
+      border: 1px solid $border-color;
+      border-radius: $border-radius-sm;
+      background: $light-bg;
+      font-family: $font-family;
+      transition: $transition-base;
+      height: auto;
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
+        background: $white;
+      }
+
+      &::placeholder {
+        color: $text-muted;
+      }
+    }
+  }
+
+  .filter-controls {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    align-items: center;
+    flex-shrink: 0;
+
+    .filter-select {
+      min-width: 180px;
+      padding: 0.8rem 1rem;
+      border: 1px solid $border-color;
+      border-radius: $border-radius-sm;
+      background: $white;
+      font-family: $font-family;
+      cursor: pointer;
+      transition: $transition-base;
+
+      &:hover {
+        border-color: $text-muted;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
+      }
+
+      &.active {
+        background: rgba(74, 107, 255, 0.1);
+        border-color: $primary-color;
+        color: $primary-color;
+      }
+    }
+
+    .clear-filters {
+      padding: 0.8rem 1rem;
+      background: $light-bg;
+      border: 1px solid $border-color;
+      border-radius: $border-radius-sm;
+      color: $text-muted;
+      font-family: $font-family;
+      cursor: pointer;
+      transition: $transition-base;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+
+      .text-icon {
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+      }
+
+      &:hover {
+        background: $border-color;
+        color: #4b5563;
+      }
+    }
+  }
+
+  .filter-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+
+    .filter-tag {
+      background: $primary-color;
+      color: $white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: $font-weight-medium;
+    }
+
+    .clear-all {
+      background: none;
+      border: none;
+      color: $danger-color;
+      font-family: $font-family;
+      font-size: 0.875rem;
+      cursor: pointer;
+      text-decoration: underline;
+
+      &:hover {
+        color: darken($danger-color, 10%);
+      }
+    }
+  }
+}
+
+.error-message {
+  background: #fee;
+  color: $danger-color;
+  padding: 1rem;
+  border-radius: $border-radius-sm;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+// Quiz grid
+.quiz-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.quiz-card {
+  background: $white;
+  border: 1px solid $border-color;
+  border-radius: $border-radius-lg;
+  padding: 1.5rem;
+  transition: $transition-base;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+    border-color: rgba(74, 107, 255, 0.2);
+  }
+
+  .quiz-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid $border-color;
+
+    h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: $text-dark;
+      font-weight: $font-weight-semibold;
+      font-family: $font-family;
+      flex: 1;
+      margin-right: 0.75rem;
+    }
+
+    .quiz-category {
+      background: $primary-color;
+      color: $white;
+      font-size: 0.75rem;
+      font-family: $font-family;
+      padding: 0.25rem 0.5rem;
+      border-radius: $border-radius-sm;
+      font-weight: $font-weight-semibold;
+      text-transform: uppercase;
+    }
+  }
+
+  .quiz-description {
+    margin: 0 0 1rem;
+    color: $text-muted;
+    font-family: $font-family;
+    line-height: 1.6;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .quiz-meta {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+
+    .difficulty-badge,
+    .time-limit {
+      font-size: 0.75rem;
+      font-weight: $font-weight-semibold;
+      font-family: $font-family;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+
+      .text-icon {
+        width: 0.875rem;
+        height: 0.875rem;
+      }
+    }
+
+    .difficulty-badge {
+      &.difficulty-1 {
+        background: rgba(34, 197, 94, 0.1);
+        color: $success-color;
+      }
+      
+      &.difficulty-2 {
+        background: rgba(251, 191, 36, 0.1);
+        color: $warning-color;
+      }
+      
+      &.difficulty-3 {
+        background: rgba(239, 68, 68, 0.1);
+        color: $danger-color;
+      }
+    }
+
+    .time-limit {
+      background: $light-bg;
+      color: $text-muted;
+    }
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid $border-color;
+
+    .btn {
+      flex: 1;
+      padding: 0.75rem;
+      border-radius: $border-radius-sm;
+      font-weight: $font-weight-semibold;
+      font-family: $font-family;
+      transition: $transition-base;
+      text-align: center;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      &.btn-primary {
+        background: $primary-color;
+        color: $white;
+        border: none;
+
+        &:hover {
+          background: #3a5ae8;
+          transform: translateY(-1px);
+        }
+      }
+
+      &.btn-secondary {
+        background: $white;
+        color: $primary-color;
+        border: 1px solid $border-color;
+
+        &:hover {
+          background: $light-bg;
+          transform: translateY(-1px);
+        }
+      }
+
+      &.btn-danger {
+        background: $danger-color;
+        color: $white;
+        border: none;
+
+        &:hover {
+          background: darken($danger-color, 10%);
+          transform: translateY(-1px);
+        }
+      }
+    }
+  }
+}
+
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem;
+  background: $light-bg;
+  border-radius: $border-radius-lg;
+  border: 1px dashed $border-color;
+
+  p {
     margin-bottom: 1.5rem;
-    color: var(--color-primary);
+    color: $text-muted;
+    font-family: $font-family;
+  }
+
+  .btn {
+    font-family: $font-family;
+    font-weight: $font-weight-medium;
+  }
+}
+
+// Responsive Design
+@media (max-width: 992px) {
+  .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+
+    .search-container {
+      flex: none;
+      min-width: auto;
+    }
+
+    .filter-controls {
+      flex-wrap: wrap;
+      justify-content: center;
+
+      .filter-select {
+        min-width: auto;
+        flex: 1;
+        min-width: 150px;
+      }
+
+      .clear-filters {
+        flex-shrink: 0;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .search-bar .filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+
+    .filter-select,
+    .clear-filters {
+      min-width: auto;
+    }
   }
 
   .quiz-grid {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
+}
 
-  .quiz-card {
-    @extend .card;
-    text-align: center;
-
-    h3 {
-      margin-bottom: 0.5rem;
-    }
-
-    p {
-      margin-bottom: 1rem;
-      color: var(--text-secondary);
-    }
+@media (max-width: 480px) {
+  .quiz-card .actions {
+    flex-direction: column;
   }
 }

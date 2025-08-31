@@ -31,11 +31,14 @@ namespace ResultService.Api.Migrations
                     b.Property<DateTime>("CompletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<float>("MaxPossibleScore")
+                        .HasColumnType("real");
+
                     b.Property<Guid>("QuizId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Score")
-                        .HasColumnType("int");
+                    b.Property<float>("Score")
+                        .HasColumnType("real");
 
                     b.Property<int>("TimeTakenSeconds")
                         .HasColumnType("int");
@@ -58,6 +61,12 @@ namespace ResultService.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("bit");
+
+                    b.Property<float>("PointsAwarded")
+                        .HasColumnType("real");
+
                     b.Property<Guid>("QuestionId")
                         .HasColumnType("uniqueidentifier");
 
@@ -73,11 +82,13 @@ namespace ResultService.Api.Migrations
 
             modelBuilder.Entity("ResultService.Api.Domain.Entities.ResultAnswer", b =>
                 {
-                    b.HasOne("ResultService.Api.Domain.Entities.Result", null)
+                    b.HasOne("ResultService.Api.Domain.Entities.Result", "Result")
                         .WithMany("ResultAnswers")
                         .HasForeignKey("ResultId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Result");
                 });
 
             modelBuilder.Entity("ResultService.Api.Domain.Entities.Result", b =>

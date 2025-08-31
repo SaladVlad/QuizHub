@@ -1,146 +1,299 @@
+@use '../../styles/variables' as *;
+
 .navbar {
-  background-color: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  padding: 1rem 2rem;
-  box-shadow: var(--shadow);
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 9999;
+  background: $white;
+  border-bottom: 1px solid $border-color;
+  box-shadow: $shadow-md;
 
-  .navbar-container {
+  &-container {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
+    justify-content: space-between;
+    max-width: 1400px;
     margin: 0 auto;
+    height: 100%;
+    padding: 0 2rem;
   }
 
-  .logo {
-    font-weight: 700;
-    font-size: 1.5rem;
-    color: var(--color-primary);
+  &-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: $font-family;
+  font-weight: $font-weight-bold;
+  font-size: 1.5rem;
+  color: $primary-color;
+  text-decoration: none;
+  transition: $transition-base;
+
+  &-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  &-secondary {
+    color: $text-dark;
+    margin-left: -2px;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.mobile-menu-button {
+  display: none;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: $border-radius-sm;
+
+  .menu-icon {
+    position: relative;
+    width: 20px;
+    height: 2px;
+    background: $text-muted;
+    transition: $transition-base;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: $text-muted;
+      transition: $transition-base;
+    }
+
+    &::before { top: -6px; }
+    &::after { bottom: -6px; }
+  }
+
+  &.open .menu-icon {
+    background: transparent;
+
+    &::before { transform: translateY(6px) rotate(45deg); }
+    &::after { transform: translateY(-6px) rotate(-45deg); }
+  }
+}
+
+.desktop-nav {
+  flex: 1;
+  display: flex;
+  justify-content: center;
 
   .nav-links {
     display: flex;
     gap: 1.5rem;
-
-    li {
-      list-style: none;
-
-      a {
-        color: var(--text-primary);
-        font-weight: 500;
-
-        &:hover {
-          color: var(--color-primary-dark);
-        }
-      }
-    }
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
+}
 
-  .profile-dropdown {
-    position: relative;
+.nav-item {
+  a {
     display: flex;
     align-items: center;
-    cursor: pointer;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    color: $text-muted;
+    text-decoration: none;
+    font-family: $font-family;
+    font-weight: $font-weight-medium;
+    border-radius: $border-radius-sm;
+    transition: $transition-base;
 
-    .avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--color-primary);
-      transition: box-shadow 0.2s ease;
+    &:hover,
+    &.active {
+      color: $primary-color;
+      background: rgba(74, 107, 255, 0.1);
+    }
+
+    .nav-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+  }
+}
+
+.mobile-menu {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: $white;
+  border-top: 1px solid $border-color;
+  box-shadow: $shadow-md;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+
+  &.open {
+    max-height: calc(100vh - 64px);
+  }
+
+  .mobile-nav-links {
+    padding: 1rem 0;
+    margin: 0;
+
+    .nav-item {
+      margin: 0.25rem 1rem;
+
+      a {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+
+        .nav-icon {
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+  }
+}
+
+.profile-dropdown {
+  position: relative;
+
+  .avatar-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 50%;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid $primary-color;
+    object-fit: cover;
+    transition: $transition-base;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    min-width: 200px;
+    background: $white;
+    border: 1px solid $border-color;
+    border-radius: $border-radius-md;
+    box-shadow: $shadow-lg;
+    padding: 0.75rem 0;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+    transition: all 0.2s ease;
+    z-index: 1100;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      right: 20px;
+      width: 12px;
+      height: 12px;
+      background: $white;
+      border: 1px solid $border-color;
+      border-bottom: none;
+      border-right: none;
+      transform: rotate(45deg);
+    }
+
+    &.opening {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    &.closing {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.95);
+    }
+
+    a,
+    button {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 1rem 1.5rem;
+      background: none;
+      border: none;
+      color: $text-muted;
+      text-decoration: none;
+      font-family: $font-family;
+      font-weight: $font-weight-medium;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      .dropdown-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
 
       &:hover {
-        box-shadow: 0 0 8px var(--color-primary-dark);
+        background: rgba(74, 107, 255, 0.08);
+        color: $primary-color;
       }
     }
 
-    .dropdown-menu {
-      position: absolute;
-      top: 48px;
-      right: 0;
-      background-color: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: 6px;
-      box-shadow: var(--shadow);
-      min-width: 160px;
-      display: flex;
-      flex-direction: column;
-      padding: 0.5rem 0;
-      z-index: 200;
-      opacity: 0;
-      transform: translateY(-10px);
-      animation: dropdownFadeIn 0.1s forwards ease-out;
+    button {
+      color: $danger-color;
+      margin-top: 0.25rem;
+      border-top: 1px solid rgba(220, 53, 69, 0.1);
 
-        &.opening {
-            animation: dropdownFadeIn 100ms forwards ease-out;
-            pointer-events: auto;
-        }
-
-        &.closing {
-            animation: dropdownFadeOut 100ms forwards ease-in;
-            pointer-events: none;
-        }
-
-      a,
-      button {
-        padding: 0.6rem 1.2rem;
-        background: none;
-        border: none;
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 0.95rem;
-        text-align: left;
-        width: 100%;
-        cursor: pointer;
-        transition: background-color 0.15s ease, color 0.15s ease;
-        user-select: none;
-
-        &:hover {
-          background-color: var(--color-primary-light);
-          color: var(--color-primary-dark);
-        }
-      }
-
-      button {
-        color: #d93025;
-        font-weight: 700;
-
-        &:hover {
-          background-color: #fce8e6;
-          color: #a52714;
-        }
+      &:hover {
+        background: rgba(220, 53, 69, 0.08);
+        color: $danger-color;
       }
     }
   }
-
-  .logout-btn {
-    margin-left: 1.5rem;
-  }
 }
 
-@keyframes dropdownFadeIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (max-width: 968px) {
+  .navbar-container {
+    padding: 0 1rem;
   }
-}
 
-@keyframes dropdownFadeOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
+  .desktop-nav {
+    display: none;
   }
-  to {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-}
 
-/* Add this at the end or move to your global variables file */
-:root {
-  --color-primary-light: #e3f2fd; /* Example light color, adjust as needed */
+  .mobile-menu-button {
+    display: flex;
+  }
+
+  .logo {
+    font-size: 1.4rem;
+
+    &-icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
 }

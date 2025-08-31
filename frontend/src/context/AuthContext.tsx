@@ -1,13 +1,13 @@
-// context/AuthContext.tsx
 import { createContext, useState, useEffect } from "react";
 import { ReactNode } from "react";
-import { UserDto } from "../models/UserDtos";
+import { UserDto } from "../dtos/user";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: UserDto | null;
   login: (token: string, user: UserDto) => void;
   logout: () => void;
+  updateUser: (user: UserDto) => void;
   loading: boolean;
 }
 
@@ -16,6 +16,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   login: () => {},
   logout: () => {},
+  updateUser: () => {},
   loading: true,
 });
 
@@ -25,22 +26,79 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("jwt");
-    const userData = localStorage.getItem("user");
+    const initializeAuth = async () => {
+      const token = localStorage.getItem("jwt");
+      const userData = localStorage.getItem("user");
 
-    if (token && userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        setAuthenticated(true);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-        localStorage.removeItem("jwt");
-        localStorage.removeItem("user");
+      if (token && userData) {
+        try {
+          // Verify the token is still valid by making an API call
+          const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/users/auth/currentUser`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            // Get the latest user data from the server
+            const responseData = await response.json();
+            // Extract user from ServiceResult structure if needed
+            const currentUserData = responseData.data || responseData;
+            setUser(currentUserData);
+            setAuthenticated(true);
+            // Update localStorage with just the user data
+            localStorage.setItem("user", JSON.stringify(currentUserData));
+          } else {
+            // Token is invalid, clear local storage
+            localStorage.removeItem("jwt");
+            localStorage.removeItem("user");
+          }
+        } catch (error) {
+          console.error("Auth initialization error:", error);
+          // Fallback to localStorage data if server fetch fails
+          try {
+            const storedUserData = JSON.parse(userData);
+            const fallbackUser = storedUserData.data || storedUserData;
+            if (fallbackUser && fallbackUser.id) {
+              setUser(fallbackUser);
+              setAuthenticated(true);
+              return;
+            }
+          } catch (parseError) {
+            console.error("Failed to parse stored user data:", parseError);
+          }
+          localStorage.removeItem("jwt");
+          localStorage.removeItem("user");
+        }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
+  }, []);
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'jwt' && !e.newValue) {
+        setUser(null)
+        setAuthenticated(false)
+      }
+      if (e.key === 'user' && !e.newValue) {
+        setUser(null)
+        setAuthenticated(false)
       }
     }
-    setLoading(false);
-  }, []);
+    const onForcedLogout = () => {
+      setUser(null)
+      setAuthenticated(false)
+    }
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('auth:logout', onForcedLogout as EventListener)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('auth:logout', onForcedLogout as EventListener)
+    }
+  }, [])
 
   const login = (token: string, user: UserDto) => {
     localStorage.setItem("jwt", token);
@@ -56,11 +114,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAuthenticated(false);
   };
 
+  const updateUser = (updatedUser: UserDto) => {
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   const value = {
     isAuthenticated,
     user,
     login,
     logout,
+    updateUser,
     loading,
   };
 

@@ -1,0 +1,61 @@
+@use '../../styles/variables' as *;
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 200px;
+  width: 100%;
+  
+  p {
+    margin-top: $spacing-md;
+    color: $text-muted;
+    font-size: 1.1rem;
+    font-family: $font-family;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 64px;
+  height: 64px;
+  position: relative;
+
+  div {
+    box-sizing: border-box;
+    display: block;
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    margin: 6px;
+    border: 6px solid $primary-color;
+    border-radius: 50%;
+    animation: loading-spinner 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    border-color: $primary-color transparent transparent transparent;
+
+    &:nth-child(1) { 
+      animation-delay: -0.45s; 
+    }
+    
+    &:nth-child(2) { 
+      animation-delay: -0.3s; 
+    }
+    
+    &:nth-child(3) { 
+      animation-delay: -0.15s; 
+    }
+  }
+}
+
+@keyframes loading-spinner {
+  0% { 
+    transform: rotate(0deg); 
+  }
+  
+  100% { 
+    transform: rotate(360deg); 
+  }
+}
