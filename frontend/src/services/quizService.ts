@@ -47,8 +47,9 @@ export interface UpsertQuestionRequest {
 
  
 
-export const getQuizById = async (id: string): Promise<QuizDto> => {
-  const res = await fetch(`${API_BASE_URL}/quizzes/${id}`, {
+export const getQuizById = async (id: string, includeDeleted: boolean = false): Promise<QuizDto> => {
+  const url = `${API_BASE_URL}/quizzes/${id}${includeDeleted ? '?includeDeleted=true' : ''}`;
+  const res = await fetch(url, {
     method: 'GET',
     headers: buildHeaders(true),
     credentials: 'include'
@@ -57,8 +58,9 @@ export const getQuizById = async (id: string): Promise<QuizDto> => {
   return res.json()
 }
 
-export const getQuizWithQuestions = async (id: string): Promise<QuizDto> => {
-  const res = await fetch(`${API_BASE_URL}/quizzes/${id}/with-questions`, {
+export const getQuizWithQuestions = async (id: string, includeDeleted: boolean = false): Promise<QuizDto> => {
+  const url = `${API_BASE_URL}/quizzes/${id}/with-questions${includeDeleted ? '?includeDeleted=true' : ''}`;
+  const res = await fetch(url, {
     method: 'GET',
     headers: buildHeaders(true),
     credentials: 'include'
@@ -162,6 +164,15 @@ export const createQuiz = async (
   })
   if (!res.ok) await handleApiError(res)
   return res.json()
+}
+
+export const deleteQuiz = async (id: string): Promise<void> => {
+  const res = await fetch(`${API_BASE_URL}/quizzes/${id}`, {
+    method: 'DELETE',
+    headers: buildHeaders(true),
+    credentials: 'include'
+  })
+  if (!res.ok) await handleApiError(res)
 }
 
 export {}

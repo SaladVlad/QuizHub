@@ -3,7 +3,7 @@ services:
     build:
       context: ./Services/Gateway/Gateway.Api
     ports:
-      - "5004:80"
+      - "0.0.0.0:5004:80"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
     depends_on:
@@ -88,17 +88,17 @@ services:
     networks:
       - quizhub-network
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: react-client
-  #   ports:
-  #     - "3000:80"   # or use 80:80 if you want root access
-  #   depends_on:
-  #     - gateway
-  #   networks:
-  #     - quizhub-network
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: react-client
+    ports:
+      - "0.0.0.0:3000:80"
+    depends_on:
+      - gateway
+    networks:
+      - quizhub-network
 
 networks:
   quizhub-network:

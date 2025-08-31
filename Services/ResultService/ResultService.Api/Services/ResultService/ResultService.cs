@@ -166,7 +166,7 @@ public class ResultService : IResultService
 
             // Batch fetch user and quiz data
             var usersTask = _userServiceClient.GetUsersBatchAsync(userIds);
-            var quizzesTask = _quizServiceClient.GetQuizzesBatchAsync(quizIds);
+            var quizzesTask = _quizServiceClient.GetQuizzesBatchAsync(quizIds, includeDeleted: true);
 
             await Task.WhenAll(usersTask, quizzesTask);
 

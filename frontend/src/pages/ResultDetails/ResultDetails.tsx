@@ -22,7 +22,7 @@ const ResultDetails: React.FC = () => {
         setLoading(true);
         const res = await getResultById(id);
         setResult(res);
-        const quiz = await getQuizWithQuestions(res.quizId);
+        const quiz = await getQuizWithQuestions(res.quizId, true);
         setQuestions(quiz?.questions ?? []);
       } catch (e: any) {
         setError(e.message || "Failed to load result details");
@@ -121,9 +121,10 @@ const ResultDetails: React.FC = () => {
           <div className="questions">
         {questions.map((q, idx) => {
           const ans = answersByQuestion[q.id];
-          const isMultiple =
-            q.questionType === 1 ||
-            (q as any).questionType === "MultipleChoice";
+          const isMultiple = q.questionType === 1 || (q as any).questionType === "MultipleChoice";
+          const isFillIn = q.questionType === 3 || (q as any).questionType === "FillInTheBlank";
+          const isTrueFalse = q.questionType === 2 || (q as any).questionType === "TrueFalse";
+          
           const givenSet = new Set(
             (ans?.givenAnswer ?? "")
               .split(",")
@@ -144,37 +145,79 @@ const ResultDetails: React.FC = () => {
                 )}
               </div>
               <div className="q-answers">
-                {q.answers.map((a) => {
-                  const isCorrect = !!a.isCorrect;
-                  const userSelected = isMultiple
-                    ? givenSet.has(a.id)
-                    : givenSet.has(a.text) ||
-                      givenSet.has(a.text.toLowerCase());
-                  return (
-                    <div
-                      key={a.id}
-                      className={`ans ${isCorrect ? "correct" : ""} ${
-                        userSelected ? "selected" : ""
-                      } ${isMultiple ? "checkbox" : ""}`}
-                    >
-                      <span className="bullet"></span>
-                      <span className="text">{a.text}</span>
+                {isFillIn ? (
+                  // For fill-in questions, show the correct answers and user's answer differently
+                  <div className="fill-in-result">
+                    <div className="correct-answers">
+                      <strong>Correct answers:</strong>
+                      {q.answers.filter(a => a.isCorrect).map((a, i) => (
+                        <React.Fragment key={a.id}>
+                          {i > 0 && <span className="separator">, </span>}
+                          <span className="correct-answer">{a.text}</span>
+                        </React.Fragment>
+                      ))}
                     </div>
-                  );
-                })}
+                    {ans?.givenAnswer && (
+                      <div className="user-answer">
+                        <strong>Your answer:</strong> 
+                        <span className={`given-answer ${ans.isCorrect ? 'correct' : 'incorrect'}`}>
+                          {ans.givenAnswer}
+                        </span>
+                      </div>
+                    )}
+                    {!ans?.givenAnswer && (
+                      <div className="user-answer">
+                        <strong>Your answer:</strong> 
+                        <span className="given-answer no-answer">Not answered</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // For other question types (single choice, multiple choice, true/false)
+                  q.answers.map((a) => {
+                    const isCorrect = !!a.isCorrect;
+                    const userSelected = isMultiple
+                      ? givenSet.has(a.id)
+                      : isTrueFalse
+                        ? givenSet.has(a.text)
+                        : givenSet.has(a.id);
+                    return (
+                      <div
+                        key={a.id}
+                        className={`ans ${isCorrect ? "correct" : ""} ${
+                          userSelected ? "selected" : ""
+                        } ${isMultiple ? "checkbox" : ""}`}
+                      >
+                        <span className="bullet"></span>
+                        <span className="text">{a.text}</span>
+                      </div>
+                    );
+                  })
+                )}
               </div>
-              {!ans?.isCorrect && ans?.givenAnswer && (
+              {!isFillIn && !ans?.isCorrect && (
                 <div className="given">
-                  Your answer: <em>{
-                    isMultiple 
-                      ? givenSet.size > 0 
-                        ? Array.from(givenSet).map(answerId => {
-                            const answer = q.answers.find(a => a.id === answerId);
-                            return answer?.text || answerId;
-                          }).join(', ')
-                        : 'No answer selected'
-                      : ans.givenAnswer
-                  }</em>
+                  {ans?.givenAnswer ? (
+                    <>
+                      Your answer: <em>{
+                        isMultiple 
+                          ? givenSet.size > 0 
+                            ? Array.from(givenSet).map(answerId => {
+                                const answer = q.answers.find(a => a.id === answerId);
+                                return answer?.text || answerId;
+                              }).join(', ')
+                            : 'No answer selected'
+                          : isTrueFalse
+                            ? ans.givenAnswer
+                            : (() => {
+                                const answer = q.answers.find(a => a.id === ans.givenAnswer);
+                                return answer?.text || ans.givenAnswer;
+                              })()
+                      }</em>
+                    </>
+                  ) : (
+                    <em className="no-answer">Not answered</em>
+                  )}
                 </div>
               )}
             </div>

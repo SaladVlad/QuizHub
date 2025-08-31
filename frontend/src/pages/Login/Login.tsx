@@ -39,12 +39,6 @@ const Login: React.FC = () => {
   const handleUsernameOrEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsernameOrEmail(value);
-    
-    const fieldError = validateField('usernameOrEmail', value);
-    setFieldErrors(prev => ({
-      ...prev,
-      usernameOrEmail: fieldError
-    }));
 
     if (error) setError("");
   };
@@ -52,14 +46,24 @@ const Login: React.FC = () => {
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassword(value);
-    
-    const fieldError = validateField('password', value);
+
+    if (error) setError("");
+  };
+
+  const handleUsernameOrEmailBlur = () => {
+    const fieldError = validateField('usernameOrEmail', usernameOrEmail);
+    setFieldErrors(prev => ({
+      ...prev,
+      usernameOrEmail: fieldError
+    }));
+  };
+
+  const handlePasswordBlur = () => {
+    const fieldError = validateField('password', password);
     setFieldErrors(prev => ({
       ...prev,
       password: fieldError
     }));
-
-    if (error) setError("");
   };
 
   const validateAllFields = (): boolean => {
@@ -113,6 +117,7 @@ const Login: React.FC = () => {
             placeholder="Enter your username or email"
             value={usernameOrEmail}
             onChange={handleUsernameOrEmailChange}
+            onBlur={handleUsernameOrEmailBlur}
             required
             disabled={isLoading}
             className={fieldErrors.usernameOrEmail ? 'error' : ''}
@@ -128,6 +133,7 @@ const Login: React.FC = () => {
             placeholder="Enter your password"
             value={password}
             onChange={handlePasswordChange}
+            onBlur={handlePasswordBlur}
             required
             disabled={isLoading}
             className={fieldErrors.password ? 'error' : ''}

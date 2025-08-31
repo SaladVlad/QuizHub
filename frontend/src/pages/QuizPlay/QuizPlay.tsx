@@ -75,8 +75,24 @@ const QuizPlay: React.FC<QuizPlayProps> = () => {
         return allCorrect ? score + questionPoints : score;
       } else {
         // For single choice, true/false, and fill in the blank
-        const selectedAnswer = question.answers.find(a => a.id === userAnswer);
-        return selectedAnswer?.isCorrect ? score + questionPoints : score;
+        if (question.questionType === 3) { // Fill in the blank
+          // For fill-in questions, the userAnswer is a string, not an ID
+          const isCorrect = question.answers.some(a => 
+            a.isCorrect && 
+            a.text.toLowerCase() === (userAnswer as string).toLowerCase()
+          );
+          return isCorrect ? score + questionPoints : score;
+        } else if (question.questionType === 2) { // True/False
+          // For true/false, userAnswer is the answer text, not ID
+          const isCorrect = question.answers.some(a => 
+            a.isCorrect && a.text === userAnswer
+          );
+          return isCorrect ? score + questionPoints : score;
+        } else {
+          // For single choice (questionType === 0)
+          const selectedAnswer = question.answers.find(a => a.id === userAnswer);
+          return selectedAnswer?.isCorrect ? score + questionPoints : score;
+        }
       }
     }, 0);
   }, [questions]);

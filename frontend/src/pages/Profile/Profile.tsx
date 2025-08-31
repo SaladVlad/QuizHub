@@ -10,17 +10,26 @@ import "./Profile.scss";
 import Loading from "../../components/Loading/Loading";
 
 const Profile: React.FC = () => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, updateUser: updateAuthUser } = useAuth();
   const [user, setUser] = useState<UserDto | null>(null);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [formData, setFormData] = useState<{ username: string; email: string }>(
-    { username: "", email: "" }
-  );
+  const [formData, setFormData] = useState<{ 
+    username: string; 
+    email: string; 
+    firstName: string; 
+    lastName: string; 
+  }>({
+    username: "", 
+    email: "", 
+    firstName: "", 
+    lastName: ""
+  });
   const [avatarImage, setAvatarImage] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [passwordData, setPasswordData] = useState({
@@ -34,15 +43,20 @@ const Profile: React.FC = () => {
       try {
         const fullUser = await getUserById(authUser.id, true);
         setUser(fullUser);
-        setFormData({ username: fullUser.username, email: fullUser.email });
+        setFormData({ 
+          username: fullUser.username, 
+          email: fullUser.email,
+          firstName: fullUser.firstName,
+          lastName: fullUser.lastName
+        });
 
-        if (fullUser.avatarImage) {
+        if (fullUser.avatarImage && fullUser.avatarImage.length > 0) {
           const isBase64 = fullUser.avatarImage.startsWith("data:");
-          setAvatarPreview(
-            isBase64
-              ? fullUser.avatarImage
-              : `data:image/png;base64,${fullUser.avatarImage}`
-          );
+          const imageUrl = isBase64
+            ? fullUser.avatarImage
+            : `data:image/png;base64,${fullUser.avatarImage}`;
+          // Add timestamp to prevent caching issues
+          setAvatarPreview(`${imageUrl}#${Date.now()}`);
         } else {
           setAvatarPreview(null);
         }
@@ -81,6 +95,7 @@ const Profile: React.FC = () => {
     }
 
     setAvatarImage(file);
+    setRemoveImage(false);
     setError("");
 
     const reader = new FileReader();
@@ -91,22 +106,42 @@ const Profile: React.FC = () => {
   const handleRemoveImage = () => {
     setAvatarImage(null);
     setAvatarPreview(null);
+    setRemoveImage(true);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleProfileSave = async () => {
-    if (!user) return;
+    if (!authUser) return;
     try {
       setError("");
       setSuccess("");
       await updateUser({
-        userId: user.id,
+        userId: authUser.id,
         username: formData.username,
         email: formData.email,
-        avatarImage: avatarImage || undefined,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        avatarImage: removeImage ? undefined : (avatarImage || undefined),
+        removeImage: removeImage,
       });
       setSuccess("Profile updated successfully.");
       setEditing(false);
+      setRemoveImage(false);
+      
+      // Refresh user data to update avatar preview
+      const updatedUser = await getUserById(authUser.id, true);
+      setUser(updatedUser);
+      updateAuthUser(updatedUser); // Update the auth context too
+      if (updatedUser.avatarImage && updatedUser.avatarImage.length > 0) {
+        const isBase64 = updatedUser.avatarImage.startsWith("data:");
+        const imageUrl = isBase64
+          ? updatedUser.avatarImage
+          : `data:image/png;base64,${updatedUser.avatarImage}`;
+        // Add timestamp to force refresh
+        setAvatarPreview(`${imageUrl}#${Date.now()}`);
+      } else {
+        setAvatarPreview(null);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to update profile");
     }
@@ -212,6 +247,32 @@ const Profile: React.FC = () => {
             disabled={!editing}
             onChange={handleChange}
             placeholder="Enter your email"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="firstName">First Name</label>
+          <input
+            id="firstName"
+            type="text"
+            name="firstName"
+            value={formData.firstName}
+            disabled={!editing}
+            onChange={handleChange}
+            placeholder="Enter your first name"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="lastName">Last Name</label>
+          <input
+            id="lastName"
+            type="text"
+            name="lastName"
+            value={formData.lastName}
+            disabled={!editing}
+            onChange={handleChange}
+            placeholder="Enter your last name"
           />
         </div>
 
