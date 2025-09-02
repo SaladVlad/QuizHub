@@ -16,6 +16,8 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
   const [formData, setFormData] = useState<{ 
     username: string; 
     email: string; 
@@ -74,6 +76,8 @@ const Profile: React.FC = () => {
     setEditing(true);
     setSuccess("");
     setError("");
+    setPasswordError("");
+    setPasswordSuccess("");
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -151,22 +155,32 @@ const Profile: React.FC = () => {
     if (!user) return;
 
     const { newPassword, confirmPassword } = passwordData;
-    if (newPassword !== confirmPassword)
-      return setError("Passwords do not match");
+    
+    // Clear previous messages
+    setPasswordError("");
+    setPasswordSuccess("");
+    
+    // Validate password length
+    if (newPassword.length < 6) {
+      return setPasswordError("Password must be at least 6 characters long");
+    }
+    
+    // Check if passwords match
+    if (newPassword !== confirmPassword) {
+      return setPasswordError("Passwords do not match");
+    }
 
     try {
-      setError("");
-      setSuccess("");
       const payload: ResetPasswordRequestDto = {
         userId: user.id,
         newPassword,
         confirmPassword,
       };
       await resetPassword(payload);
-      setSuccess("Password changed successfully.");
+      setPasswordSuccess("Password changed successfully.");
       setPasswordData({ newPassword: "", confirmPassword: "" });
     } catch (err: any) {
-      setError(err.message || "Failed to reset password");
+      setPasswordError(err.message || "Failed to reset password");
     }
   };
 
@@ -185,8 +199,6 @@ const Profile: React.FC = () => {
         <p>Manage your account settings and personal information</p>
       </div>
 
-      {error && <div className="message error-message">{error}</div>}
-      {success && <div className="message success-message">{success}</div>}
 
       <div className="card">
         <div className="card-body">
@@ -304,6 +316,9 @@ const Profile: React.FC = () => {
           )}
         </div>
 
+        {error && <div className="message error-message">{error}</div>}
+        {success && <div className="message success-message">{success}</div>}
+
         <div className="password-section">
           <h2>Change Password</h2>
           <div className="form-group">
@@ -338,16 +353,26 @@ const Profile: React.FC = () => {
           </div>
           <div className="actions">
             <button
-              className="primary"
+              className={`primary ${
+                (!passwordData.newPassword ||
+                passwordData.newPassword.length < 6 ||
+                passwordData.newPassword !== passwordData.confirmPassword)
+                  ? 'disabled'
+                  : ''
+              }`}
               onClick={handlePasswordReset}
               disabled={
                 !passwordData.newPassword ||
+                passwordData.newPassword.length < 6 ||
                 passwordData.newPassword !== passwordData.confirmPassword
               }
             >
               Change Password
             </button>
           </div>
+
+          {passwordError && <div className="message error-message">{passwordError}</div>}
+          {passwordSuccess && <div className="message success-message">{passwordSuccess}</div>}
           </div>
         </div>
       </div>

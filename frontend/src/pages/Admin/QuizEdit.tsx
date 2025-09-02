@@ -47,13 +47,37 @@ const QuizEdit: React.FC = () => {
     setError("");
     try {
       const data = await getQuizWithQuestions(id);
-      setQuiz(data);
+      
+      // Fix any True/False questions that don't have proper True/False answers
+      const fixedData = {
+        ...data,
+        questions: data.questions?.map(q => {
+          if (q.questionType === 2) {
+            // Check if True/False question has proper answers
+            const hasTrue = q.answers.some(a => a.text === "True");
+            const hasFalse = q.answers.some(a => a.text === "False");
+            
+            if (!hasTrue || !hasFalse || q.answers.length !== 2) {
+              return {
+                ...q,
+                answers: [
+                  { id: q.answers[0]?.id || `temp-tf-${Date.now()}-1`, text: "True", isCorrect: q.answers.find(a => a.text === "True")?.isCorrect || false },
+                  { id: q.answers[1]?.id || `temp-tf-${Date.now()}-2`, text: "False", isCorrect: q.answers.find(a => a.text === "False")?.isCorrect || false }
+                ]
+              };
+            }
+          }
+          return q;
+        }) || []
+      };
+      
+      setQuiz(fixedData);
       setMeta({
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        difficulty: data.difficulty ?? 1,
-        timeLimitSeconds: data.timeLimitSeconds ?? 300,
+        title: fixedData.title,
+        description: fixedData.description,
+        category: fixedData.category,
+        difficulty: fixedData.difficulty ?? 1,
+        timeLimitSeconds: fixedData.timeLimitSeconds ?? 300,
       });
     } catch (e: any) {
       setError(e?.message || "Failed to load quiz");
@@ -138,11 +162,16 @@ const QuizEdit: React.FC = () => {
       prev
         ? {
             ...prev,
-            questions: (prev.questions || []).map((q) =>
-              q.id === questionId
-                ? { ...q, answers: (q.answers || []).filter((a) => a.id !== answerId) }
-                : q
-            ),
+            questions: (prev.questions || []).map((q) => {
+              if (q.id === questionId) {
+                // Prevent deleting answers from True/False questions
+                if (q.questionType === 2) {
+                  return q;
+                }
+                return { ...q, answers: (q.answers || []).filter((a) => a.id !== answerId) };
+              }
+              return q;
+            }),
           }
         : prev
     );
@@ -238,7 +267,35 @@ const QuizEdit: React.FC = () => {
               <label>Type</label>
               <select
                 value={q.questionType}
-                onChange={(e) => setQuiz(prev => prev ? { ...prev, questions: prev.questions?.map(qq => qq.id === q.id ? { ...qq, questionType: Number(e.target.value) } : qq) } : prev)}
+                onChange={(e) => {
+                  const newType = Number(e.target.value);
+                  setQuiz(prev => prev ? { 
+                    ...prev, 
+                    questions: prev.questions?.map(qq => {
+                      if (qq.id === q.id) {
+                        let updatedAnswers = qq.answers;
+                        
+                        // Auto-generate True/False answers when type changes to True/False
+                        if (newType === 2) {
+                          updatedAnswers = [
+                            { id: `temp-tf-${Date.now()}-1`, text: "True", isCorrect: false },
+                            { id: `temp-tf-${Date.now()}-2`, text: "False", isCorrect: false }
+                          ];
+                        }
+                        // Reset to default answers for other types if needed
+                        else if (qq.questionType === 2 && newType !== 2) {
+                          updatedAnswers = [
+                            { id: `temp-a-${Date.now()}-1`, text: "Answer 1", isCorrect: false },
+                            { id: `temp-a-${Date.now()}-2`, text: "Answer 2", isCorrect: false },
+                          ];
+                        }
+                        
+                        return { ...qq, questionType: newType, answers: updatedAnswers };
+                      }
+                      return qq;
+                    }) 
+                  } : prev);
+                }}
               >
                 {questionTypeOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -254,9 +311,24 @@ const QuizEdit: React.FC = () => {
                 <input
                   value={a.text}
                   placeholder={q.questionType === 2 ? "True/False option" : q.questionType === 3 ? "Expected text answer" : "Answer option"}
-                  onChange={(e) => setQuiz(prev => prev ? { ...prev, questions: prev.questions?.map(qq => qq.id === q.id ? { ...qq, answers: qq.answers.map(aa => aa.id === a.id ? { ...aa, text: e.target.value } : aa) } : qq) } : prev)}
+                  disabled={q.questionType === 2}
+                  onChange={(e) => {
+                    // Prevent editing True/False answer text
+                    if (q.questionType === 2) return;
+                    setQuiz(prev => prev ? { ...prev, questions: prev.questions?.map(qq => qq.id === q.id ? { ...qq, answers: qq.answers.map(aa => aa.id === a.id ? { ...aa, text: e.target.value } : aa) } : qq) } : prev);
+                  }}
                 />
-                {(q.questionType !== 2 && q.questionType !== 3) && (
+                {q.questionType === 2 ? (
+                  <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <input
+                      type="radio"
+                      name={`correct-${q.id}`}
+                      checked={!!a.isCorrect}
+                      onChange={(e) => handleAnswerCorrectToggle(q, a.id, e.target.checked)}
+                    />
+                    Correct
+                  </label>
+                ) : (q.questionType !== 3) && (
                   <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <input
                       type={q.questionType === 0 ? "radio" : "checkbox"}
@@ -267,14 +339,18 @@ const QuizEdit: React.FC = () => {
                     Correct
                   </label>
                 )}
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button className="btn" onClick={() => onDeleteAnswerLocal(q.id, a.id)} disabled={saving}>Delete</button>
-                </div>
+                {q.questionType !== 2 && (
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                    <button className="btn" onClick={() => onDeleteAnswerLocal(q.id, a.id)} disabled={saving}>Delete</button>
+                  </div>
+                )}
               </div>
             ))}
-            <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn btn-secondary" onClick={() => onAddAnswerLocal(q.id)} disabled={saving}>+ Add Answer</button>
-            </div>
+            {q.questionType !== 2 && (
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="btn btn-secondary" onClick={() => onAddAnswerLocal(q.id)} disabled={saving}>+ Add Answer</button>
+              </div>
+            )}
           </div>
 
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>

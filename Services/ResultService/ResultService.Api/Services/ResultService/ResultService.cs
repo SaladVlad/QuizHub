@@ -65,7 +65,7 @@ public class ResultService : IResultService
         }
     }
 
-    public async Task<ServiceResult<ResultResponseDto>> GetResultByIdAsync(Guid id, Guid userId)
+    public async Task<ServiceResult<ResultResponseDto>> GetResultByIdAsync(Guid id, Guid userId, bool isAdmin = false)
     {
         try
         {
@@ -79,7 +79,7 @@ public class ResultService : IResultService
             }
 
             // Only allow the user who created the result or an admin to view it
-            if (result.UserId != userId && !await IsUserAdmin(userId))
+            if (result.UserId != userId && !isAdmin)
             {
                 return ServiceResult<ResultResponseDto>.FailureResult("You are not authorized to view this result", 403);
             }

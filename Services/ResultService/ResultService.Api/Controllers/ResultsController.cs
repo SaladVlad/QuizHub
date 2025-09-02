@@ -48,7 +48,10 @@ public class ResultsController : ControllerBase
         if (userId == Guid.Empty)
             return Unauthorized();
 
-        var result = await _resultService.GetResultByIdAsync(id, userId);
+        // Check if user is admin - if so, they can view any result
+        var isAdmin = await IsUserAdmin(userId);
+        var result = await _resultService.GetResultByIdAsync(id, userId, isAdmin);
+        
         return !result.Success 
             ? StatusCode(result.StatusCode, new { message = result.ErrorMessage })
             : Ok(result.Data);
