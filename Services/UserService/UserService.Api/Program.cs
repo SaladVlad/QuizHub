@@ -7,8 +7,16 @@ using UserService.Api.Services.AuthService;
 using UserService.Api.Services.UserService;
 using UserService.Api.Services.UserValidationService;
 using UserService.Api.Utils;
+using Serilog;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+builder.Host.UseSerilog((context, configuration) =>
+{
+    configuration.ReadFrom.Configuration(context.Configuration);
+});
 
 // Add services
 builder.Services.AddControllers();
@@ -68,8 +76,13 @@ app.Use(async (context, next) =>
 });
 
 app.UseRouting();
+
+// Enable Prometheus metrics
+app.UseHttpMetrics();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapMetrics();
 
 app.Run();

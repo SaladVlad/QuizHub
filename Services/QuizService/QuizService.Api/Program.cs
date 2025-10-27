@@ -5,8 +5,16 @@ using Microsoft.OpenApi.Models;
 using QuizService.Api.Data;
 using QuizService.Api.Services;
 using System.Text;
+using Serilog;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+builder.Host.UseSerilog((context, configuration) =>
+{
+    configuration.ReadFrom.Configuration(context.Configuration);
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -84,10 +92,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 
+// Enable Prometheus metrics
+app.UseHttpMetrics();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapMetrics();
 
 app.Use(async (context, next) =>
 {
