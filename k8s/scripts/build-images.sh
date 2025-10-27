@@ -16,6 +16,9 @@ eval $(minikube docker-env)
 echo "✓ Docker configured"
 echo ""
 
+# Go to root directory
+cd ../../
+
 # Build Gateway
 echo "[1/5] Building Gateway..."
 cd Services/Gateway/Gateway.Api

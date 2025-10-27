@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}"
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║                                                            ║"
-echo "║        QuizHub Kubernetes Complete Setup Script           ║"
+echo "║        QuizHub Kubernetes Complete Setup Script            ║"
 echo "║                                                            ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"

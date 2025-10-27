@@ -1,15 +1,16 @@
-#!/bin/sh
+#!/bin/bash
+# wait-for-it.sh: Wait for a host to be available
 
-HOST="$1"
-PORT="$2"
+host="$1"
+port="$2"
 shift 2
-CMD="$@"
+cmd="$@"
 
-echo "Waiting for $HOST:$PORT..."
+echo "Waiting for $host:$port..."
 
-while ! nc -z "$HOST" "$PORT"; do
+while ! nc -z "$host" "$port"; do
   sleep 1
 done
 
-echo "$HOST:$PORT is available. Starting..."
-exec "$@"
+echo "$host:$port is available, starting application..."
+exec $cmd
