@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: result-service-config
+  namespace: quizhub
+data:
+  appsettings.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "AllowedHosts": "*",
+      "ServiceUrls": {
+        "QuizService": "http://quiz-service.quizhub.svc.cluster.local"
+      }
+    }
