@@ -42,6 +42,12 @@ spec:
           value: "false"
         - name: XPACK_MONITORING_ENABLED
           value: "true"
+        - name: XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY
+          value: "something_at_least_32_characters_long_for_encryption_key"
+        - name: SERVER_PUBLICBASEURL
+          value: "http://kibana.quizhub.local"
+        - name: LOGGING_ROOT_LEVEL
+          value: "info"
         resources:
           requests:
             memory: "512Mi"

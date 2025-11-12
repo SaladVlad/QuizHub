@@ -47,7 +47,10 @@ data:
           "Application": "QuizHub"
         }
       },
-      "AllowedHosts": "*"
+      "AllowedHosts": "*",
+      "OpenTelemetry": {
+        "OtlpEndpoint": "http://jaeger.observability.svc.cluster.local:4317"
+      }
     }
   ocelot.Production.json: |
     {

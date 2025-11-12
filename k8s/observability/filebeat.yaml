@@ -9,51 +9,84 @@ data:
     - type: container
       paths:
         - /var/log/containers/*quizhub*.log
+      json.keys_under_root: false
+      json.add_error_key: true
+      json.message_key: log
       processors:
       - add_kubernetes_metadata:
           host: ${NODE_NAME}
           matchers:
           - logs_path:
               logs_path: "/var/log/containers/"
+      - decode_json_fields:
+          fields: ["message"]
+          target: "json"
+          overwrite_keys: true
+          max_depth: 2
+      - drop_event:
+          when:
+            or:
+              - contains:
+                  kubernetes.container.name: "filebeat"
+              - contains:
+                  kubernetes.container.name: "prometheus"
+              - contains:
+                  kubernetes.container.name: "grafana"
+      # Extract service name from container name
       - script:
           lang: javascript
+          id: extract_service_info
           source: >
             function process(event) {
               var serviceName = "unknown";
+              var logLevel = "info";
               var message = event.Get("message");
+              var timestamp = new Date().toISOString();
 
-              // Extract service name from log message
-              if (message) {
-                // Format 1: [timestamp] [level] [ServiceName] [...]
-                var match = message.match(/\[(?:INF|ERR|WRN|DBG|FTL|TRC)\]\s+\[([^\]]+)\]/);
-                if (match && match[1]) {
-                  serviceName = match[1].toLowerCase();
-                }
-                // Format 2: [SERVICE NAME] message
-                else {
-                  match = message.match(/^\[([^\]]+)\]/);
-                  if (match && match[1]) {
-                    var name = match[1].toLowerCase();
-                    if (name.includes("user service")) serviceName = "userservice";
-                    else if (name.includes("gateway")) serviceName = "gateway";
-                    else if (name.includes("quiz service")) serviceName = "quizservice";
-                    else if (name.includes("result service")) serviceName = "resultservice";
-                  }
-                }
+              // Extract from Kubernetes metadata
+              var containerName = event.Get("kubernetes.container.name");
+              if (containerName) {
+                if (containerName.includes("gateway")) serviceName = "gateway";
+                else if (containerName.includes("user-service")) serviceName = "user-service";
+                else if (containerName.includes("quiz-service")) serviceName = "quiz-service";
+                else if (containerName.includes("result-service")) serviceName = "result-service";
               }
 
-              // Fallback: extract from container name
-              if (serviceName === "unknown" && event.Get("kubernetes.container.name")) {
-                var containerName = event.Get("kubernetes.container.name");
-                if (containerName.includes("gateway")) serviceName = "gateway";
-                else if (containerName.includes("user-service")) serviceName = "userservice";
-                else if (containerName.includes("quiz-service")) serviceName = "quizservice";
-                else if (containerName.includes("result-service")) serviceName = "resultservice";
+              // Parse Serilog format: [timestamp] [level] [ServiceName] [SourceContext] message
+              if (message) {
+                // Extract timestamp
+                var tsMatch = message.match(/^\[([^\]]+)\]/);
+                if (tsMatch && tsMatch[1]) {
+                  timestamp = tsMatch[1];
+                }
+                
+                // Extract log level
+                var levelMatch = message.match(/\]\s*\[(\w+)\]\s*\[/);
+                if (levelMatch && levelMatch[1]) {
+                  logLevel = levelMatch[1].toLowerCase();
+                }
+                
+                // Extract service name from log if present
+                var serviceMatch = message.match(/\]\s*\[\w+\]\s*\[([^\]]+)\]/);
+                if (serviceMatch && serviceMatch[1]) {
+                  var extractedService = serviceMatch[1].toLowerCase().replace(/\s+/g, '-');
+                  if (extractedService && extractedService !== "sourcecontext") {
+                    serviceName = extractedService;
+                  }
+                }
+                
+                // Clean message - remove structural parts
+                var cleanMessage = message.replace(/^\[[^\]]+\]\s*\[\w+\]\s*\[[^\]]+\]\s*(\[[^\]]+\]\s*)?/, '').trim();
+                if (cleanMessage) {
+                  event.Put("log.message", cleanMessage);
+                }
               }
 
               event.Put("service.name", serviceName);
               event.Put("service.environment", "production");
-              event.Put("application", "QuizHub");
+              event.Put("service.application", "quizhub");
+              event.Put("log.level", logLevel);
+              event.Put("@timestamp", timestamp);
             }
 
     output.elasticsearch:
@@ -74,8 +107,35 @@ data:
     setup.template.settings:
       index.number_of_shards: 1
       index.number_of_replicas: 0
+    setup.template.mappings:
+      properties:
+        "@timestamp":
+          type: date
+        message:
+          type: text
+        log.message:
+          type: text
+        log.level:
+          type: keyword
+        service.name:
+          type: keyword
+        service.environment:
+          type: keyword
+        service.application:
+          type: keyword
+        kubernetes.container.name:
+          type: keyword
+        kubernetes.pod.name:
+          type: keyword
+        kubernetes.namespace:
+          type: keyword
 
     logging.level: info
+    logging.to_files: true
+    logging.files:
+      path: /var/log/filebeat
+      name: filebeat
+      keepfiles: 7
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -97,7 +157,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: filebeat
-        image: docker.elastic.co/beats/filebeat:7.17.15
+        image: docker.elastic.co/beats/filebeat:8.11.0
         args: [
           "-c", "/etc/filebeat.yml",
           "-e"

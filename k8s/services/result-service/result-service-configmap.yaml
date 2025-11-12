@@ -50,5 +50,8 @@ data:
         "BaseUrl": "http://quiz-service.quizhub.svc.cluster.local",
         "TimeoutSeconds": 30,
         "MaxRetryAttempts": 3
+      },
+      "OpenTelemetry": {
+        "OtlpEndpoint": "http://jaeger.observability.svc.cluster.local:4317"
       }
     }
