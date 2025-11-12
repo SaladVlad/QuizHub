@@ -15,6 +15,25 @@ data:
       editable: true
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: observability
+data:
+  grafana.ini: |
+    [tracing]
+    enabled = false
+
+    [tracing.jaeger]
+    always_included_tag =
+    sampler_type =
+    sampler_param = 0
+    address =
+
+    [tracing.opentelemetry.otlp]
+    address =
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: grafana
@@ -58,6 +77,8 @@ spec:
           value: "admin"
         - name: GF_INSTALL_PLUGINS
           value: "grafana-piechart-panel"
+        - name: GF_TRACING_JAEGER_ADDRESS
+          value: ""
         resources:
           requests:
             memory: "256Mi"
@@ -68,11 +89,17 @@ spec:
         volumeMounts:
         - name: datasources
           mountPath: /etc/grafana/provisioning/datasources
+        - name: config
+          mountPath: /etc/grafana/grafana.ini
+          subPath: grafana.ini
         - name: storage
           mountPath: /var/lib/grafana
       volumes:
       - name: datasources
         configMap:
           name: grafana-datasources
+      - name: config
+        configMap:
+          name: grafana-config
       - name: storage
         emptyDir: {}

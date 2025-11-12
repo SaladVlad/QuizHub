@@ -27,7 +27,7 @@ data:
           {
             "Name": "Console",
             "Args": {
-              "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"
+              "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] [{ServiceName}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
             }
           },
           {
@@ -35,12 +35,17 @@ data:
             "Args": {
               "path": "logs/gateway-.log",
               "rollingInterval": "Day",
-              "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {SourceContext}: {Message:lj} {Properties:j}{NewLine}{Exception}",
+              "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] [{ServiceName}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
               "retainedFileCountLimit": 30
             }
           }
         ],
-        "Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ]
+        "Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ],
+        "Properties": {
+          "ServiceName": "Gateway",
+          "Environment": "Production",
+          "Application": "QuizHub"
+        }
       },
       "AllowedHosts": "*"
     }

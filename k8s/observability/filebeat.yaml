@@ -15,18 +15,65 @@ data:
           matchers:
           - logs_path:
               logs_path: "/var/log/containers/"
-      - decode_json_fields:
-          fields: ["message"]
-          target: "json"
-          overwrite_keys: true
+      - script:
+          lang: javascript
+          source: >
+            function process(event) {
+              var serviceName = "unknown";
+              var message = event.Get("message");
+
+              // Extract service name from log message
+              if (message) {
+                // Format 1: [timestamp] [level] [ServiceName] [...]
+                var match = message.match(/\[(?:INF|ERR|WRN|DBG|FTL|TRC)\]\s+\[([^\]]+)\]/);
+                if (match && match[1]) {
+                  serviceName = match[1].toLowerCase();
+                }
+                // Format 2: [SERVICE NAME] message
+                else {
+                  match = message.match(/^\[([^\]]+)\]/);
+                  if (match && match[1]) {
+                    var name = match[1].toLowerCase();
+                    if (name.includes("user service")) serviceName = "userservice";
+                    else if (name.includes("gateway")) serviceName = "gateway";
+                    else if (name.includes("quiz service")) serviceName = "quizservice";
+                    else if (name.includes("result service")) serviceName = "resultservice";
+                  }
+                }
+              }
+
+              // Fallback: extract from container name
+              if (serviceName === "unknown" && event.Get("kubernetes.container.name")) {
+                var containerName = event.Get("kubernetes.container.name");
+                if (containerName.includes("gateway")) serviceName = "gateway";
+                else if (containerName.includes("user-service")) serviceName = "userservice";
+                else if (containerName.includes("quiz-service")) serviceName = "quizservice";
+                else if (containerName.includes("result-service")) serviceName = "resultservice";
+              }
+
+              event.Put("service.name", serviceName);
+              event.Put("service.environment", "production");
+              event.Put("application", "QuizHub");
+            }
 
     output.elasticsearch:
       hosts: ["http://elasticsearch.observability.svc.cluster.local:9200"]
-      indices:
-        - index: "filebeat-quizhub-%{+yyyy.MM.dd}"
+      index: "quizhub-%{[service.name]}-%{+yyyy.MM.dd}"
+      allow_older_versions: true
+
+    setup.ilm.enabled: false
+    setup.template.json.enabled: false
 
     setup.kibana:
       host: "http://kibana.observability.svc.cluster.local:5601"
+
+    setup.template.name: "quizhub"
+    setup.template.pattern: "quizhub-*"
+    setup.template.enabled: true
+    setup.template.overwrite: true
+    setup.template.settings:
+      index.number_of_shards: 1
+      index.number_of_replicas: 0
 
     logging.level: info
 ---
@@ -50,7 +97,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: filebeat
-        image: docker.elastic.co/beats/filebeat:8.11.0
+        image: docker.elastic.co/beats/filebeat:7.17.15
         args: [
           "-c", "/etc/filebeat.yml",
           "-e"
