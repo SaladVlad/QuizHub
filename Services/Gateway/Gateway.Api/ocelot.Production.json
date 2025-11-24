@@ -9,7 +9,7 @@
           "Port": 80
         }
       ],
-      "UpstreamPathTemplate": "/api/users/auth/login",
+      "UpstreamPathTemplate": "/api/users/login",
       "UpstreamHttpMethod": [ "POST" ]
     },
     {
@@ -21,7 +21,7 @@
           "Port": 80
         }
       ],
-      "UpstreamPathTemplate": "/api/users/auth/register",
+      "UpstreamPathTemplate": "/api/users/register",
       "UpstreamHttpMethod": [ "POST", "OPTIONS" ]
     },
     {
