@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect } from "react";
 import { ReactNode } from "react";
 import { UserDto } from "../dtos/user";
+import { API_BASE_URL } from "../api";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -33,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (token && userData) {
         try {
           // Verify the token is still valid by making an API call
-          const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/users/auth/currentUser`, {
+          const response = await fetch(`${API_BASE_URL}/users/auth/currentUser`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

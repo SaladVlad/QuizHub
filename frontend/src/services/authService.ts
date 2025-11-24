@@ -3,14 +3,14 @@ import { LoginResponseDto, RegisterRequestDto } from '../dtos/auth'
 import { UserDto } from '../dtos/user'
 import { handleApiError } from '../utils/http'
 
- 
+// Authentication service for login and registration
 
 export const loginUser = async (
   usernameOrEmail: string,
   password: string
 ): Promise<LoginResponseDto> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/users/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/users/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export const registerUser = async (
     formData.append('avatarImage', userData.avatarImage)
   }
 
-  const response = await fetch(`${API_BASE_URL}/users/auth/register`, {
+  const response = await fetch(`${API_BASE_URL}/users/register`, {
     method: 'POST',
     body: formData,
     credentials: 'include'
