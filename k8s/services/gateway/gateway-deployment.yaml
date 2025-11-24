@@ -12,11 +12,15 @@ spec:
     metadata:
       labels:
         app: gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: gateway
-        image: quizhub/gateway:latest
-        imagePullPolicy: Never
+        image: quizhubacr2024pr40.azurecr.io/quizhub-gateway:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         env:

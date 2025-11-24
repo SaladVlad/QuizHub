@@ -52,6 +52,6 @@ data:
         "MaxRetryAttempts": 3
       },
       "OpenTelemetry": {
-        "OtlpEndpoint": "http://jaeger.observability.svc.cluster.local:4317"
+        "OtlpEndpoint": "http://jaeger-collector.observability.svc.cluster.local:4317"
       }
     }

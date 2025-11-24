@@ -9,126 +9,152 @@ data:
     - type: container
       paths:
         - /var/log/containers/*quizhub*.log
-      json.keys_under_root: false
-      json.add_error_key: true
-      json.message_key: log
       processors:
-      - add_kubernetes_metadata:
-          host: ${NODE_NAME}
-          matchers:
-          - logs_path:
-              logs_path: "/var/log/containers/"
-      - decode_json_fields:
-          fields: ["message"]
-          target: "json"
-          overwrite_keys: true
-          max_depth: 2
+      # Drop observability pods we don't want indexed
       - drop_event:
           when:
             or:
               - contains:
                   kubernetes.container.name: "filebeat"
               - contains:
-                  kubernetes.container.name: "prometheus"
-              - contains:
                   kubernetes.container.name: "grafana"
+              - contains:
+                  kubernetes.container.name: "elasticsearch"
+              - contains:
+                  kubernetes.container.name: "kibana"
+
+      # Add minimal Kubernetes metadata
+      - add_kubernetes_metadata:
+          host: ${NODE_NAME}
+          matchers:
+          - logs_path:
+              logs_path: "/var/log/containers/"
+
       # Extract service name from container name
+      - add_fields:
+          when.contains.kubernetes.container.name: "gateway"
+          fields:
+            service.name: "gateway"
+          target: ''
+      - add_fields:
+          when.contains.kubernetes.container.name: "user-service"
+          fields:
+            service.name: "user-service"
+          target: ''
+      - add_fields:
+          when.contains.kubernetes.container.name: "quiz-service"
+          fields:
+            service.name: "quiz-service"
+          target: ''
+      - add_fields:
+          when.contains.kubernetes.container.name: "result-service"
+          fields:
+            service.name: "result-service"
+          target: ''
+      - add_fields:
+          when.not.or:
+            - contains.kubernetes.container.name: "gateway"
+            - contains.kubernetes.container.name: "user-service"
+            - contains.kubernetes.container.name: "quiz-service"
+            - contains.kubernetes.container.name: "result-service"
+          fields:
+            service.name: "unknown"
+          target: ''
+
+      # Copy the log message from 'message' field before it gets processed
+      - copy_fields:
+          fields:
+            - from: "message"
+              to: "log_message"
+          fail_on_error: false
+          ignore_missing: true
+
+      # Extract log severity from Serilog format: [timestamp] [LEVEL]
+      - dissect:
+          tokenizer: "[%{log_timestamp}] [%{severity}]"
+          field: "log_message"
+          target_prefix: ""
+          ignore_failure: true
+
+      # Normalize severity to lowercase
+      - convert:
+          fields:
+            - {from: "severity", to: "severity", type: "string"}
+          mode: "copy"
+          ignore_missing: true
       - script:
           lang: javascript
-          id: extract_service_info
+          id: lowercase_severity
           source: >
             function process(event) {
-              var serviceName = "unknown";
-              var logLevel = "info";
-              var message = event.Get("message");
-              var timestamp = new Date().toISOString();
-
-              // Extract from Kubernetes metadata
-              var containerName = event.Get("kubernetes.container.name");
-              if (containerName) {
-                if (containerName.includes("gateway")) serviceName = "gateway";
-                else if (containerName.includes("user-service")) serviceName = "user-service";
-                else if (containerName.includes("quiz-service")) serviceName = "quiz-service";
-                else if (containerName.includes("result-service")) serviceName = "result-service";
+              var sev = event.Get("severity");
+              if (sev) {
+                event.Put("severity", sev.toLowerCase());
               }
-
-              // Parse Serilog format: [timestamp] [level] [ServiceName] [SourceContext] message
-              if (message) {
-                // Extract timestamp
-                var tsMatch = message.match(/^\[([^\]]+)\]/);
-                if (tsMatch && tsMatch[1]) {
-                  timestamp = tsMatch[1];
-                }
-                
-                // Extract log level
-                var levelMatch = message.match(/\]\s*\[(\w+)\]\s*\[/);
-                if (levelMatch && levelMatch[1]) {
-                  logLevel = levelMatch[1].toLowerCase();
-                }
-                
-                // Extract service name from log if present
-                var serviceMatch = message.match(/\]\s*\[\w+\]\s*\[([^\]]+)\]/);
-                if (serviceMatch && serviceMatch[1]) {
-                  var extractedService = serviceMatch[1].toLowerCase().replace(/\s+/g, '-');
-                  if (extractedService && extractedService !== "sourcecontext") {
-                    serviceName = extractedService;
-                  }
-                }
-                
-                // Clean message - remove structural parts
-                var cleanMessage = message.replace(/^\[[^\]]+\]\s*\[\w+\]\s*\[[^\]]+\]\s*(\[[^\]]+\]\s*)?/, '').trim();
-                if (cleanMessage) {
-                  event.Put("log.message", cleanMessage);
-                }
-              }
-
-              event.Put("service.name", serviceName);
-              event.Put("service.environment", "production");
-              event.Put("service.application", "quizhub");
-              event.Put("log.level", logLevel);
-              event.Put("@timestamp", timestamp);
             }
+
+      # Default severity if not extracted
+      - add_fields:
+          when.not.has_fields: ['severity']
+          fields:
+            severity: "info"
+          target: ''
+
+      # Copy log_message back to message for Kibana Logs Explorer
+      - rename:
+          fields:
+            - from: "log_message"
+              to: "message"
+          ignore_missing: true
+          fail_on_error: false
+
+      # Keep only essential fields - drop everything else
+      - drop_fields:
+          fields:
+            - agent
+            - ecs
+            - host
+            - input
+            - log
+            - stream
+            - kubernetes
+            - container
+            - json
+            - log_timestamp
+          ignore_missing: true
+
+    # Top-level processors: aggressively drop metric exposition and exporter logs
+    processors:
+    - drop_event:
+        when:
+          or:
+            - regexp:
+                message: '^(# HELP|# TYPE)'
+            - regexp:
+                message: '^[a-zA-Z_:][a-zA-Z0-9_:]*\{.*\}\s+\d+'
+            - contains:
+                kubernetes.container.name: "node-exporter"
+            - contains:
+                kubernetes.container.name: "kube-state-metrics"
+            - contains:
+                kubernetes.container.name: "cadvisor"
+            - contains:
+                kubernetes.container.name: "prometheus"
+            - regexp:
+                message: '.*\\bGET\\s+/metrics\\b.*'
+            - regexp:
+                message: '.*\\bPOST\\s+/metrics\\b.*'
 
     output.elasticsearch:
       hosts: ["http://elasticsearch.observability.svc.cluster.local:9200"]
-      index: "quizhub-%{[service.name]}-%{+yyyy.MM.dd}"
+      index: "logs-quizhub-%{[service.name]}"
       allow_older_versions: true
 
     setup.ilm.enabled: false
-    setup.template.json.enabled: false
+    setup.template.enabled: false
 
     setup.kibana:
       host: "http://kibana.observability.svc.cluster.local:5601"
-
-    setup.template.name: "quizhub"
-    setup.template.pattern: "quizhub-*"
-    setup.template.enabled: true
-    setup.template.overwrite: true
-    setup.template.settings:
-      index.number_of_shards: 1
-      index.number_of_replicas: 0
-    setup.template.mappings:
-      properties:
-        "@timestamp":
-          type: date
-        message:
-          type: text
-        log.message:
-          type: text
-        log.level:
-          type: keyword
-        service.name:
-          type: keyword
-        service.environment:
-          type: keyword
-        service.application:
-          type: keyword
-        kubernetes.container.name:
-          type: keyword
-        kubernetes.pod.name:
-          type: keyword
-        kubernetes.namespace:
-          type: keyword
 
     logging.level: info
     logging.to_files: true

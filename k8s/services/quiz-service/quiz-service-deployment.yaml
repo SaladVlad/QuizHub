@@ -4,7 +4,7 @@ metadata:
   name: quiz-service
   namespace: quizhub
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: quiz-service
@@ -19,10 +19,8 @@ spec:
     spec:
       containers:
       - name: quiz-service
-        image: quizhub/quiz-service:latest
-        imagePullPolicy: Never
-        command: ["/app/wait-for-it.sh"]
-        args: ["quiz-db.databases.svc.cluster.local", "1433", "dotnet", "QuizService.Api.dll"]
+        image: quizhubacr2024pr40.azurecr.io/quiz-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         env:
@@ -40,11 +38,11 @@ spec:
               key: db-connection
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "512Mi"
+            cpu: "500m"
         livenessProbe:
           tcpSocket:
             port: 80

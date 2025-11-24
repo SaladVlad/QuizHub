@@ -49,7 +49,7 @@ data:
       },
       "AllowedHosts": "*",
       "OpenTelemetry": {
-        "OtlpEndpoint": "http://jaeger.observability.svc.cluster.local:4317"
+        "OtlpEndpoint": "http://jaeger-collector.observability.svc.cluster.local:4317"
       }
     }
   ocelot.Production.json: |
@@ -64,7 +64,7 @@ data:
               "Port": 80
             }
           ],
-          "UpstreamPathTemplate": "/api/users/auth/login",
+          "UpstreamPathTemplate": "/api/users/login",
           "UpstreamHttpMethod": [ "POST" ]
         },
         {
@@ -76,7 +76,7 @@ data:
               "Port": 80
             }
           ],
-          "UpstreamPathTemplate": "/api/users/auth/register",
+          "UpstreamPathTemplate": "/api/users/register",
           "UpstreamHttpMethod": [ "POST", "OPTIONS" ]
         },
         {

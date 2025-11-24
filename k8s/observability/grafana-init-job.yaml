@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: grafana-setup
+  namespace: observability
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: setup
+        image: curlimages/curl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for Grafana to be ready..."
+          MAX_RETRIES=30
+          RETRY_COUNT=0
+
+          until curl -s -o /dev/null -w "%{http_code}" http://grafana.observability.svc.cluster.local:3000/api/health | grep -q "200"; do
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+              echo "Grafana did not become ready after $MAX_RETRIES attempts"
+              exit 1
+            fi
+            echo "Grafana not ready yet, waiting... (attempt $RETRY_COUNT/$MAX_RETRIES)"
+            sleep 10
+          done
+
+          echo "Grafana is ready!"
+          sleep 10  # Additional wait for full initialization
+
+          echo "Checking Grafana health..."
+          HEALTH=$(curl -s http://admin:admin@grafana.observability.svc.cluster.local:3000/api/health)
+          echo "$HEALTH"
+
+          if echo "$HEALTH" | grep -q 'database'; then
+            echo "✓ Grafana database is healthy"
+          else
+            echo "✗ Grafana database check failed"
+            exit 1
+          fi
+
+          echo ""
+          echo "Verifying Prometheus datasource..."
+          DATASOURCES=$(curl -s http://admin:admin@grafana.observability.svc.cluster.local:3000/api/datasources)
+
+          if echo "$DATASOURCES" | grep -q '"name":"Prometheus"'; then
+            echo "✓ Prometheus datasource is configured"
+          else
+            echo "✗ Prometheus datasource not found"
+          fi
+
+          echo ""
+          echo "Checking if dashboards are loaded..."
+          DASHBOARDS=$(curl -s http://admin:admin@grafana.observability.svc.cluster.local:3000/api/search?type=dash-db)
+
+          if echo "$DASHBOARDS" | grep -q '"title":"QuizHub - Service Overview"'; then
+            echo "✓ QuizHub Service Overview dashboard is loaded"
+          else
+            echo "⚠ QuizHub dashboard not found (may still be provisioning)"
+          fi
+
+          echo ""
+          echo "✓ Grafana setup verification completed successfully!"

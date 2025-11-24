@@ -1,0 +1,1266 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: observability
+data:
+  quizhub-services.json: |
+    {
+      "title": "QuizHub Services Overview",
+      "uid": "quizhub-services",
+      "editable": true,
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": {"from": "now-30m", "to": "now"},
+      "panels": [
+        {
+          "title": "Service Health Status",
+          "type": "stat",
+          "gridPos": {"x": 0, "y": 0, "w": 24, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "up{job=\"kubernetes-pods\", app=~\".*-service\"}",
+            "legendFormat": "{{app}}",
+            "refId": "A"
+          }],
+          "options": {
+            "reduceOptions": {"values": false, "calcs": ["lastNotNull"]},
+            "orientation": "horizontal",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "none"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {"type": "value", "value": "0", "text": "DOWN", "color": "red"},
+                {"type": "value", "value": "1", "text": "UP", "color": "green"}
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"value": 0, "color": "red"},
+                  {"value": 0.5, "color": "yellow"},
+                  {"value": 1, "color": "green"}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "title": "HTTP Requests per Service (req/s)",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum by (app) (rate(http_requests_received_total{app=~\".*-service|gateway\"}[2m]))",
+            "legendFormat": "{{app}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {"lineWidth": 2, "fillOpacity": 10, "showPoints": "never"},
+              "unit": "reqps",
+              "color": {"mode": "palette-classic"}
+            }
+          }
+        },
+        {
+          "title": "Response Time p95 by Service (ms)",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "histogram_quantile(0.95, sum by (le, app) (rate(http_request_duration_seconds_bucket{app=~\".*-service|gateway\"}[2m]))) * 1000",
+            "legendFormat": "{{app}} p95",
+            "refId": "A"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {"lineWidth": 2, "fillOpacity": 10},
+              "unit": "ms",
+              "color": {"mode": "palette-classic"}
+            }
+          }
+        },
+        {
+          "title": "Memory Usage by Service",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum by (pod) (container_memory_usage_bytes{namespace=\"quizhub\", container=~\".*-service|gateway\"})",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {"lineWidth": 1, "fillOpacity": 20},
+              "unit": "bytes",
+              "color": {"mode": "palette-classic"}
+            }
+          }
+        },
+        {
+          "title": "CPU Usage by Service (cores)",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"quizhub\", container=~\".*-service|gateway\"}[2m]))",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {"lineWidth": 1, "fillOpacity": 20},
+              "unit": "none",
+              "decimals": 3,
+              "color": {"mode": "palette-classic"}
+            }
+          }
+        },
+        {
+          "title": "HTTP Status Codes Distribution",
+          "type": "piechart",
+          "gridPos": {"x": 0, "y": 20, "w": 8, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum by (code) (increase(http_requests_received_total[5m]))",
+            "legendFormat": "{{code}}",
+            "refId": "A"
+          }],
+          "options": {
+            "legend": {"displayMode": "table", "placement": "right", "values": ["value", "percent"]},
+            "pieType": "donut"
+          }
+        },
+        {
+          "title": "Error Rate % by Service",
+          "type": "timeseries",
+          "gridPos": {"x": 8, "y": 20, "w": 16, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "100 * (sum by (app) (rate(http_requests_received_total{code=~\"5..\", app=~\".*-service|gateway\"}[2m])) / sum by (app) (rate(http_requests_received_total{app=~\".*-service|gateway\"}[2m])))",
+            "legendFormat": "{{app}} errors",
+            "refId": "A"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {"lineWidth": 2, "fillOpacity": 10},
+              "unit": "percent",
+              "max": 100,
+              "color": {"mode": "palette-classic"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"value": 0, "color": "green"},
+                  {"value": 1, "color": "yellow"},
+                  {"value": 5, "color": "red"}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  user-service-dashboard.json: |
+    {
+      "title": "User Service Details",
+      "uid": "user-service-detail",
+      "editable": true,
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": {"from": "now-30m", "to": "now"},
+      "panels": [
+        {
+          "title": "User Service Health",
+          "type": "stat",
+          "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "up{app=\"user-service\"}",
+            "refId": "A"
+          }],
+          "options": {
+            "reduceOptions": {"values": false, "calcs": ["lastNotNull"]},
+            "textMode": "value_and_name",
+            "colorMode": "background"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {"type": "value", "value": "0", "text": "DOWN"},
+                {"type": "value", "value": "1", "text": "UP"}
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"value": 0, "color": "red"},
+                  {"value": 1, "color": "green"}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "title": "Request Rate",
+          "type": "stat",
+          "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum(rate(http_requests_received_total{app=\"user-service\"}[2m]))",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "reqps", "decimals": 2}}
+        },
+        {
+          "title": "Avg Response Time",
+          "type": "stat",
+          "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"user-service\"}[2m])) by (le)) * 1000",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "ms", "decimals": 1}}
+        },
+        {
+          "title": "Memory Usage",
+          "type": "stat",
+          "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum(container_memory_usage_bytes{namespace=\"quizhub\", container=\"user-service\"})",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "bytes", "decimals": 0}}
+        },
+        {
+          "title": "HTTP Requests Over Time",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "rate(http_requests_received_total{app=\"user-service\"}[2m])",
+            "legendFormat": "{{method}} {{endpoint}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 2}}}
+        },
+        {
+          "title": "Response Time Percentiles",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"user-service\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p50",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=\"user-service\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p95",
+              "refId": "B"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"user-service\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p99",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "ms", "custom": {"lineWidth": 2}}}
+        },
+        {
+          "title": "Status Codes",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum by (code) (rate(http_requests_received_total{app=\"user-service\"}[2m]))",
+            "legendFormat": "{{code}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {"defaults": {"unit": "reqps"}}
+        },
+        {
+          "title": "CPU & Memory Usage",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "rate(container_cpu_usage_seconds_total{namespace=\"quizhub\", container=\"user-service\"}[2m])",
+              "legendFormat": "CPU cores",
+              "refId": "A"
+            },
+            {
+              "expr": "container_memory_usage_bytes{namespace=\"quizhub\", container=\"user-service\"} / 1024 / 1024",
+              "legendFormat": "Memory MB",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {"defaults": {"custom": {"lineWidth": 2}}}
+        }
+      ]
+    }
+  quiz-service-dashboard.json: |
+    {
+      "title": "Quiz Service Details",
+      "uid": "quiz-service-detail",
+      "editable": true,
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": {"from": "now-30m", "to": "now"},
+      "panels": [
+        {
+          "title": "Quiz Service Health",
+          "type": "stat",
+          "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "up{app=\"quiz-service\"}",
+            "refId": "A"
+          }],
+          "options": {
+            "reduceOptions": {"values": false, "calcs": ["lastNotNull"]},
+            "textMode": "value_and_name",
+            "colorMode": "background"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {"type": "value", "value": "0", "text": "DOWN"},
+                {"type": "value", "value": "1", "text": "UP"}
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"value": 0, "color": "red"},
+                  {"value": 1, "color": "green"}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "title": "Request Rate",
+          "type": "stat",
+          "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum(rate(http_requests_received_total{app=\"quiz-service\"}[2m]))",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "reqps", "decimals": 2}}
+        },
+        {
+          "title": "Avg Response Time",
+          "type": "stat",
+          "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"quiz-service\"}[2m])) by (le)) * 1000",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "ms", "decimals": 1}}
+        },
+        {
+          "title": "Memory Usage",
+          "type": "stat",
+          "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum(container_memory_usage_bytes{namespace=\"quizhub\", container=\"quiz-service\"})",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "bytes", "decimals": 0}}
+        },
+        {
+          "title": "HTTP Requests Over Time",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "rate(http_requests_received_total{app=\"quiz-service\"}[2m])",
+            "legendFormat": "{{method}} {{endpoint}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 2}}}
+        },
+        {
+          "title": "Response Time Percentiles",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"quiz-service\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p50",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=\"quiz-service\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p95",
+              "refId": "B"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"quiz-service\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p99",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "ms", "custom": {"lineWidth": 2}}}
+        },
+        {
+          "title": "Status Codes",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum by (code) (rate(http_requests_received_total{app=\"quiz-service\"}[2m]))",
+            "legendFormat": "{{code}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {"defaults": {"unit": "reqps"}}
+        },
+        {
+          "title": "CPU & Memory Usage",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "rate(container_cpu_usage_seconds_total{namespace=\"quizhub\", container=\"quiz-service\"}[2m])",
+              "legendFormat": "CPU cores",
+              "refId": "A"
+            },
+            {
+              "expr": "container_memory_usage_bytes{namespace=\"quizhub\", container=\"quiz-service\"} / 1024 / 1024",
+              "legendFormat": "Memory MB",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {"defaults": {"custom": {"lineWidth": 2}}}
+        }
+      ]
+    }
+  result-service-dashboard.json: |
+    {
+      "title": "Result Service Details",
+      "uid": "result-service-detail",
+      "editable": true,
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": {"from": "now-30m", "to": "now"},
+      "panels": [
+        {
+          "title": "Result Service Health",
+          "type": "stat",
+          "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "up{app=\"result-service\"}",
+            "refId": "A"
+          }],
+          "options": {
+            "reduceOptions": {"values": false, "calcs": ["lastNotNull"]},
+            "textMode": "value_and_name",
+            "colorMode": "background"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {"type": "value", "value": "0", "text": "DOWN"},
+                {"type": "value", "value": "1", "text": "UP"}
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"value": 0, "color": "red"},
+                  {"value": 1, "color": "green"}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "title": "Request Rate",
+          "type": "stat",
+          "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum(rate(http_requests_received_total{app=\"result-service\"}[2m]))",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "reqps", "decimals": 2}}
+        },
+        {
+          "title": "Avg Response Time",
+          "type": "stat",
+          "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"result-service\"}[2m])) by (le)) * 1000",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "ms", "decimals": 1}}
+        },
+        {
+          "title": "Memory Usage",
+          "type": "stat",
+          "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum(container_memory_usage_bytes{namespace=\"quizhub\", container=\"result-service\"})",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "bytes", "decimals": 0}}
+        },
+        {
+          "title": "HTTP Requests Over Time",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "rate(http_requests_received_total{app=\"result-service\"}[2m])",
+            "legendFormat": "{{method}} {{endpoint}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 2}}}
+        },
+        {
+          "title": "Response Time Percentiles",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"result-service\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p50",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=\"result-service\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p95",
+              "refId": "B"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"result-service\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p99",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "ms", "custom": {"lineWidth": 2}}}
+        },
+        {
+          "title": "Status Codes",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum by (code) (rate(http_requests_received_total{app=\"result-service\"}[2m]))",
+            "legendFormat": "{{code}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {"defaults": {"unit": "reqps"}}
+        },
+        {
+          "title": "CPU & Memory Usage",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "rate(container_cpu_usage_seconds_total{namespace=\"quizhub\", container=\"result-service\"}[2m])",
+              "legendFormat": "CPU cores",
+              "refId": "A"
+            },
+            {
+              "expr": "container_memory_usage_bytes{namespace=\"quizhub\", container=\"result-service\"} / 1024 / 1024",
+              "legendFormat": "Memory MB",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {"defaults": {"custom": {"lineWidth": 2}}}
+        }
+      ]
+    }
+  quizhub-overview.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "liveNow": false,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "rate(http_requests_received_total[5m])",
+              "legendFormat": "{{service}} - {{method}} {{path}}",
+              "refId": "A"
+            }
+          ],
+          "title": "HTTP Request Rate (per service)",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.1
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "id": 2,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))",
+              "legendFormat": "{{service}} - p95",
+              "refId": "A"
+            }
+          ],
+          "title": "HTTP Request Duration (p95)",
+          "type": "gauge"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          },
+          "id": 3,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "container_memory_usage_bytes{namespace=\"quizhub\", pod=~\".*-service-.*|gateway-.*\"}",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Memory Usage by Pod",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8
+          },
+          "id": 4,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "rate(container_cpu_usage_seconds_total{namespace=\"quizhub\", pod=~\".*-service-.*|gateway-.*\"}[5m])",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "title": "CPU Usage by Pod",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                }
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16
+          },
+          "id": 5,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "pieType": "pie",
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (code) (http_requests_received_total)",
+              "legendFormat": "Status {{code}}",
+              "refId": "A"
+            }
+          ],
+          "title": "HTTP Response Status Distribution",
+          "type": "piechart"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 16
+          },
+          "id": 6,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "up{job=~\".*quizhub.*\"}",
+              "legendFormat": "{{job}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Service Health",
+          "type": "gauge"
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["quizhub", "overview"],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-15m",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "title": "QuizHub - Service Overview",
+      "uid": "quizhub-overview",
+      "version": 1,
+      "weekStart": ""
+    }
+
+    quizhub-summary.json: |
+      {
+        "annotations": {"list": []},
+        "editable": true,
+        "panels": [
+          {
+            "datasource": {"type":"prometheus","uid":"prometheus"},
+            "gridPos": {"h":8,"w":12,"x":0,"y":0},
+            "id":1,
+            "targets":[{"expr":"sum by (service) (rate(container_cpu_usage_seconds_total{namespace=\"quizhub\"}[5m]))","legendFormat":"{{service}}","refId":"A"}],
+            "title":"CPU Usage by Service (cores)",
+            "type":"timeseries"
+          },
+          {
+            "datasource": {"type":"prometheus","uid":"prometheus"},
+            "gridPos": {"h":8,"w":12,"x":12,"y":0},
+            "id":2,
+            "targets":[{"expr":"container_memory_usage_bytes{namespace=\"quizhub\"}","legendFormat":"{{pod}}","refId":"A"}],
+            "title":"Memory Usage by Pod (bytes)",
+            "type":"timeseries"
+          },
+          {
+            "datasource": {"type":"prometheus","uid":"prometheus"},
+            "gridPos": {"h":8,"w":12,"x":0,"y":8},
+            "id":3,
+            "targets":[{"expr":"sum by (service) (rate(http_requests_received_total[5m]))","legendFormat":"{{service}}","refId":"A"}],
+            "title":"HTTP Request Rate (per service)",
+            "type":"timeseries"
+          },
+          {
+            "datasource": {"type":"prometheus","uid":"prometheus"},
+            "gridPos": {"h":8,"w":12,"x":12,"y":8},
+            "id":4,
+            "targets":[{"expr":"100 * (sum by (service) (rate(http_requests_received_total{code=~\"5..\"}[5m])) / sum by (service) (rate(http_requests_received_total[5m])))","legendFormat":"{{service}}","refId":"A"}],
+            "title":"HTTP 5xx Error Rate (%)",
+            "type":"timeseries"
+          }
+        ],
+        "refresh":"10s",
+        "schemaVersion":36,
+        "style":"dark",
+        "tags": ["quizhub","summary"],
+        "time": {"from":"now-15m","to":"now"},
+        "title":"QuizHub - Summary",
+        "uid":"quizhub-summary",
+        "version":1
+      }
+  gateway-dashboard.json: |
+    {
+      "title": "API Gateway Details",
+      "uid": "gateway-detail",
+      "editable": true,
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": {"from": "now-30m", "to": "now"},
+      "panels": [
+        {
+          "title": "Gateway Health (Running Pods)",
+          "type": "stat",
+          "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "count(count by (pod) (container_memory_usage_bytes{namespace=\"quizhub\", pod=~\"gateway-.*\"}))",
+            "refId": "A"
+          }],
+          "options": {
+            "reduceOptions": {"values": false, "calcs": ["lastNotNull"]},
+            "textMode": "value_and_name",
+            "colorMode": "background"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {"type": "value", "value": "0", "text": "DOWN"},
+                {"type": "range", "from": 1, "to": 99, "text": "UP"}
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"value": 0, "color": "red"},
+                  {"value": 1, "color": "green"}
+                ]
+              },
+              "unit": "pods"
+            }
+          }
+        },
+        {
+          "title": "Total Request Rate",
+          "type": "stat",
+          "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum(rate(http_requests_received_total{app=\"gateway\"}[2m]))",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "reqps", "decimals": 2}}
+        },
+        {
+          "title": "Avg Response Time",
+          "type": "stat",
+          "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"gateway\"}[2m])) by (le)) * 1000",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "ms", "decimals": 1}}
+        },
+        {
+          "title": "Memory Usage",
+          "type": "stat",
+          "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum(container_memory_usage_bytes{namespace=\"quizhub\", container=\"gateway\"})",
+            "refId": "A"
+          }],
+          "options": {"colorMode": "value", "graphMode": "area"},
+          "fieldConfig": {"defaults": {"unit": "bytes", "decimals": 0}}
+        },
+        {
+          "title": "Requests by Endpoint",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum by (endpoint) (rate(http_requests_received_total{app=\"gateway\"}[2m]))",
+            "legendFormat": "{{endpoint}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {"defaults": {"unit": "reqps", "custom": {"lineWidth": 2}}}
+        },
+        {
+          "title": "Response Time Percentiles",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"gateway\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p50",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=\"gateway\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p95",
+              "refId": "B"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"gateway\"}[2m])) by (le)) * 1000",
+              "legendFormat": "p99",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "ms", "custom": {"lineWidth": 2}}}
+        },
+        {
+          "title": "Status Codes Distribution",
+          "type": "timeseries",
+          "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [{
+            "expr": "sum by (code) (rate(http_requests_received_total{app=\"gateway\"}[2m]))",
+            "legendFormat": "{{code}}",
+            "refId": "A"
+          }],
+          "fieldConfig": {"defaults": {"unit": "reqps"}}
+        },
+        {
+          "title": "CPU & Memory Usage",
+          "type": "timeseries",
+          "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {
+              "expr": "rate(container_cpu_usage_seconds_total{namespace=\"quizhub\", container=\"gateway\"}[2m])",
+              "legendFormat": "CPU cores",
+              "refId": "A"
+            },
+            {
+              "expr": "container_memory_usage_bytes{namespace=\"quizhub\", container=\"gateway\"} / 1024 / 1024",
+              "legendFormat": "Memory MB",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {"defaults": {"custom": {"lineWidth": 2}}}
+        }
+      ]
+    }

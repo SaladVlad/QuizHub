@@ -11,6 +11,7 @@ data:
       type: prometheus
       access: proxy
       url: http://prometheus.observability.svc.cluster.local:9090
+      uid: prometheus
       isDefault: true
       editable: true
 ---
@@ -21,17 +22,27 @@ metadata:
   namespace: observability
 data:
   grafana.ini: |
-    [tracing]
-    enabled = false
-
     [tracing.jaeger]
-    always_included_tag =
-    sampler_type =
-    sampler_param = 0
-    address =
-
-    [tracing.opentelemetry.otlp]
-    address =
+    enabled = false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-provider
+  namespace: observability
+data:
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+    - name: 'QuizHub'
+      orgId: 1
+      folder: 'QuizHub Observability'
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards
 ---
 apiVersion: v1
 kind: Service
@@ -66,7 +77,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: grafana/grafana:10.2.2
+        image: grafana/grafana:11.3.1
         ports:
         - containerPort: 3000
           name: http
@@ -77,18 +88,32 @@ spec:
           value: "admin"
         - name: GF_INSTALL_PLUGINS
           value: "grafana-piechart-panel"
-        - name: GF_TRACING_JAEGER_ADDRESS
+        - name: GF_AUTH_DISABLE_LOGIN_FORM
+          value: "false"
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "false"
+        - name: GF_LOG_LEVEL
+          value: "info"
+        - name: JAEGER_AGENT_PORT
+          value: ""
+        - name: JAEGER_SAMPLER_TYPE
+          value: ""
+        - name: JAEGER_SAMPLER_PARAM
           value: ""
         resources:
           requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
             memory: "256Mi"
             cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "200m"
         volumeMounts:
         - name: datasources
           mountPath: /etc/grafana/provisioning/datasources
+        - name: dashboards-provider
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: dashboards
+          mountPath: /var/lib/grafana/dashboards
         - name: config
           mountPath: /etc/grafana/grafana.ini
           subPath: grafana.ini
@@ -98,6 +123,13 @@ spec:
       - name: datasources
         configMap:
           name: grafana-datasources
+      - name: dashboards-provider
+        configMap:
+          name: grafana-dashboards-provider
+      - name: dashboards
+        configMap:
+          name: grafana-dashboards
+          optional: true
       - name: config
         configMap:
           name: grafana-config

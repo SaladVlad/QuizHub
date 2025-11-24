@@ -4,7 +4,7 @@ metadata:
   name: result-service
   namespace: quizhub
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: result-service
@@ -19,10 +19,8 @@ spec:
     spec:
       containers:
       - name: result-service
-        image: quizhub/result-service:latest
-        imagePullPolicy: Never
-        command: ["/app/wait-for-it.sh"]
-        args: ["result-db.databases.svc.cluster.local", "1433", "dotnet", "ResultService.Api.dll"]
+        image: quizhubacr2024pr40.azurecr.io/result-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         env:
@@ -42,11 +40,11 @@ spec:
           value: "http://quiz-service.quizhub.svc.cluster.local"
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "256Mi"
+            cpu: "100m"
           limits:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "512Mi"
+            cpu: "500m"
         livenessProbe:
           tcpSocket:
             port: 80
