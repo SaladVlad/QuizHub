@@ -398,3 +398,4 @@ FodyWeavers.xsd
 .claude
 .env.local
 .claude.local
+/terraform/azure/.terraform
