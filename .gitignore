@@ -395,3 +395,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 .env
+.claude
+.env.local
+.claude.local
