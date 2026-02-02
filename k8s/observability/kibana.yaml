@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: observability
+  labels:
+    app: kibana
+spec:
+  ports:
+  - port: 5601
+    name: http
+    targetPort: 5601
+  selector:
+    app: kibana
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana:8.11.0
+        ports:
+        - containerPort: 5601
+          name: http
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://elasticsearch.observability.svc.cluster.local:9200"
+        - name: XPACK_SECURITY_ENABLED
+          value: "false"
+        # Disable heavy features to reduce memory usage
+        - name: XPACK_MONITORING_ENABLED
+          value: "false"
+        - name: XPACK_GRAPH_ENABLED
+          value: "false"
+        - name: XPACK_REPORTING_ENABLED
+          value: "false"
+        - name: XPACK_ML_ENABLED
+          value: "false"
+        - name: XPACK_APM_ENABLED
+          value: "false"
+        - name: XPACK_INFRA_ENABLED
+          value: "false"
+        - name: XPACK_CANVAS_ENABLED
+          value: "false"
+        - name: XPACK_MAPS_ENABLED
+          value: "false"
+        - name: TELEMETRY_ENABLED
+          value: "false"
+        - name: TELEMETRY_OPTIN
+          value: "false"
+        # Optimize for minimal memory usage
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=384"
+        - name: LOGGING_ROOT_LEVEL
+          value: "error"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/status
+            port: 5601
+          initialDelaySeconds: 300
+          periodSeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /api/status
+            port: 5601
+          initialDelaySeconds: 300
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 5

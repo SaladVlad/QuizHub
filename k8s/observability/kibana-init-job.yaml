@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kibana-setup
+  namespace: observability
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: setup
+        image: curlimages/curl:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for Kibana to be ready..."
+          until curl -s -o /dev/null -w "%{http_code}" http://kibana.observability.svc.cluster.local:5601/api/status | grep -q "200"; do
+            echo "Kibana not ready yet, waiting..."
+            sleep 10
+          done
+          echo "Kibana is ready!"
+          
+          sleep 30  # Additional wait for full initialization
+          
+          echo "Creating Kibana data view for logs..."
+
+          # Create main data view for all logs
+          echo "Creating All Logs data view..."
+          curl -X POST "http://kibana.observability.svc.cluster.local:5601/api/data_views/data_view" \
+            -H 'kbn-xsrf: true' \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "data_view": {
+                "title": "logs-*-*",
+                "name": "All Logs",
+                "timeFieldName": "@timestamp"
+              }
+            }'
+          echo ""
+
+          echo "Data view creation completed!"
+
+          # Wait a bit and verify
+          sleep 5
+          echo "Verifying data views..."
+          curl -X GET "http://kibana.observability.svc.cluster.local:5601/api/data_views" \
+            -H 'kbn-xsrf: true'

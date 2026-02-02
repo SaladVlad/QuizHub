@@ -1,0 +1,270 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  namespace: observability
+data:
+  filebeat.yml: |-
+    filebeat.inputs:
+    - type: container
+      paths:
+        - /var/log/containers/*quizhub*.log
+      processors:
+      # Drop observability pods we don't want indexed
+      - drop_event:
+          when:
+            or:
+              - contains:
+                  kubernetes.container.name: "filebeat"
+              - contains:
+                  kubernetes.container.name: "grafana"
+              - contains:
+                  kubernetes.container.name: "elasticsearch"
+              - contains:
+                  kubernetes.container.name: "kibana"
+
+      # Add minimal Kubernetes metadata
+      - add_kubernetes_metadata:
+          host: ${NODE_NAME}
+          matchers:
+          - logs_path:
+              logs_path: "/var/log/containers/"
+
+      # Extract service name from container name
+      - add_fields:
+          when.contains.kubernetes.container.name: "gateway"
+          fields:
+            service.name: "gateway"
+          target: ''
+      - add_fields:
+          when.contains.kubernetes.container.name: "user-service"
+          fields:
+            service.name: "user-service"
+          target: ''
+      - add_fields:
+          when.contains.kubernetes.container.name: "quiz-service"
+          fields:
+            service.name: "quiz-service"
+          target: ''
+      - add_fields:
+          when.contains.kubernetes.container.name: "result-service"
+          fields:
+            service.name: "result-service"
+          target: ''
+      - add_fields:
+          when.not.or:
+            - contains.kubernetes.container.name: "gateway"
+            - contains.kubernetes.container.name: "user-service"
+            - contains.kubernetes.container.name: "quiz-service"
+            - contains.kubernetes.container.name: "result-service"
+          fields:
+            service.name: "unknown"
+          target: ''
+
+      # Copy the log message from 'message' field before it gets processed
+      - copy_fields:
+          fields:
+            - from: "message"
+              to: "log_message"
+          fail_on_error: false
+          ignore_missing: true
+
+      # Extract log severity from Serilog format: [timestamp] [LEVEL]
+      - dissect:
+          tokenizer: "[%{log_timestamp}] [%{severity}]"
+          field: "log_message"
+          target_prefix: ""
+          ignore_failure: true
+
+      # Normalize severity to lowercase
+      - convert:
+          fields:
+            - {from: "severity", to: "severity", type: "string"}
+          mode: "copy"
+          ignore_missing: true
+      - script:
+          lang: javascript
+          id: lowercase_severity
+          source: >
+            function process(event) {
+              var sev = event.Get("severity");
+              if (sev) {
+                event.Put("severity", sev.toLowerCase());
+              }
+            }
+
+      # Default severity if not extracted
+      - add_fields:
+          when.not.has_fields: ['severity']
+          fields:
+            severity: "info"
+          target: ''
+
+      # Copy log_message back to message for Kibana Logs Explorer
+      - rename:
+          fields:
+            - from: "log_message"
+              to: "message"
+          ignore_missing: true
+          fail_on_error: false
+
+      # Keep only essential fields - drop everything else
+      - drop_fields:
+          fields:
+            - agent
+            - ecs
+            - host
+            - input
+            - log
+            - stream
+            - kubernetes
+            - container
+            - json
+            - log_timestamp
+          ignore_missing: true
+
+    # Top-level processors: aggressively drop metric exposition and exporter logs
+    processors:
+    - drop_event:
+        when:
+          or:
+            - regexp:
+                message: '^(# HELP|# TYPE)'
+            - regexp:
+                message: '^[a-zA-Z_:][a-zA-Z0-9_:]*\{.*\}\s+\d+'
+            - contains:
+                kubernetes.container.name: "node-exporter"
+            - contains:
+                kubernetes.container.name: "kube-state-metrics"
+            - contains:
+                kubernetes.container.name: "cadvisor"
+            - contains:
+                kubernetes.container.name: "prometheus"
+            - regexp:
+                message: '.*\\bGET\\s+/metrics\\b.*'
+            - regexp:
+                message: '.*\\bPOST\\s+/metrics\\b.*'
+
+    output.elasticsearch:
+      hosts: ["http://elasticsearch.observability.svc.cluster.local:9200"]
+      index: "logs-quizhub-%{[service.name]}"
+      allow_older_versions: true
+
+    setup.ilm.enabled: false
+    setup.template.enabled: false
+
+    setup.kibana:
+      host: "http://kibana.observability.svc.cluster.local:5601"
+
+    logging.level: info
+    logging.to_files: true
+    logging.files:
+      path: /var/log/filebeat
+      name: filebeat
+      keepfiles: 7
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: filebeat
+  namespace: observability
+  labels:
+    app: filebeat
+spec:
+  selector:
+    matchLabels:
+      app: filebeat
+  template:
+    metadata:
+      labels:
+        app: filebeat
+    spec:
+      serviceAccountName: filebeat
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: filebeat
+        image: docker.elastic.co/beats/filebeat:8.11.0
+        args: [
+          "-c", "/etc/filebeat.yml",
+          "-e"
+        ]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: ELASTICSEARCH_HOST
+          value: "elasticsearch.observability.svc.cluster.local"
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        securityContext:
+          runAsUser: 0
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/filebeat.yml
+          readOnly: true
+          subPath: filebeat.yml
+        - name: data
+          mountPath: /usr/share/filebeat/data
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: varlog
+          mountPath: /var/log
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0640
+          name: filebeat-config
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: data
+        hostPath:
+          path: /var/lib/filebeat-data
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: observability
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+- apiGroups: [""]
+  resources:
+  - namespaces
+  - pods
+  - nodes
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: observability
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io

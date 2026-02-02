@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: result-service-config
+  namespace: quizhub
+data:
+  appsettings.json: |
+    {
+      "Serilog": {
+        "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
+        "MinimumLevel": {
+          "Default": "Information",
+          "Override": {
+            "Microsoft": "Warning",
+            "Microsoft.AspNetCore": "Warning",
+            "System": "Warning"
+          }
+        },
+        "WriteTo": [
+          {
+            "Name": "Console",
+            "Args": {
+              "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] [{ServiceName}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
+            }
+          },
+          {
+            "Name": "File",
+            "Args": {
+              "path": "/app/logs/result-service-.log",
+              "rollingInterval": "Day",
+              "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] [{ServiceName}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
+            }
+          }
+        ],
+        "Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ],
+        "Properties": {
+          "ServiceName": "ResultService",
+          "Environment": "Production",
+          "Application": "QuizHub"
+        }
+      },
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning"
+        }
+      },
+      "AllowedHosts": "*",
+      "QuizService": {
+        "BaseUrl": "http://quiz-service.quizhub.svc.cluster.local",
+        "TimeoutSeconds": 30,
+        "MaxRetryAttempts": 3
+      },
+      "OpenTelemetry": {
+        "OtlpEndpoint": "http://jaeger-collector.observability.svc.cluster.local:4317"
+      }
+    }

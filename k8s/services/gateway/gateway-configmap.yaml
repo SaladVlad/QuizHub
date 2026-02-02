@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: quizhub
+data:
+  appsettings.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning",
+          "Ocelot": "Information"
+        }
+      },
+      "Serilog": {
+        "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
+        "MinimumLevel": {
+          "Default": "Information",
+          "Override": {
+            "Microsoft": "Warning",
+            "System": "Warning",
+            "Ocelot": "Information"
+          }
+        },
+        "WriteTo": [
+          {
+            "Name": "Console",
+            "Args": {
+              "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] [{ServiceName}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
+            }
+          },
+          {
+            "Name": "File",
+            "Args": {
+              "path": "logs/gateway-.log",
+              "rollingInterval": "Day",
+              "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] [{ServiceName}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
+              "retainedFileCountLimit": 30
+            }
+          }
+        ],
+        "Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ],
+        "Properties": {
+          "ServiceName": "Gateway",
+          "Environment": "Production",
+          "Application": "QuizHub"
+        }
+      },
+      "AllowedHosts": "*",
+      "OpenTelemetry": {
+        "OtlpEndpoint": "http://jaeger-collector.observability.svc.cluster.local:4317"
+      }
+    }
+  ocelot.Production.json: |
+    {
+      "Routes": [
+        {
+          "DownstreamPathTemplate": "/api/users/auth/login",
+          "DownstreamScheme": "http",
+          "DownstreamHostAndPorts": [
+            {
+              "Host": "user-service.quizhub.svc.cluster.local",
+              "Port": 80
+            }
+          ],
+          "UpstreamPathTemplate": "/api/users/login",
+          "UpstreamHttpMethod": [ "POST" ]
+        },
+        {
+          "DownstreamPathTemplate": "/api/users/auth/register",
+          "DownstreamScheme": "http",
+          "DownstreamHostAndPorts": [
+            {
+              "Host": "user-service.quizhub.svc.cluster.local",
+              "Port": 80
+            }
+          ],
+          "UpstreamPathTemplate": "/api/users/register",
+          "UpstreamHttpMethod": [ "POST", "OPTIONS" ]
+        },
+        {
+          "DownstreamPathTemplate": "/api/users/{everything}",
+          "DownstreamScheme": "http",
+          "DownstreamHostAndPorts": [
+            {
+              "Host": "user-service.quizhub.svc.cluster.local",
+              "Port": 80
+            }
+          ],
+          "UpstreamPathTemplate": "/api/users/{everything}",
+          "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+          "AuthenticationOptions": {
+            "AuthenticationProviderKey": "JwtBearer",
+            "AllowedScopes": []
+          }
+        },
+        {
+          "DownstreamPathTemplate": "/api/quizzes/{everything}",
+          "DownstreamScheme": "http",
+          "DownstreamHostAndPorts": [
+            {
+              "Host": "quiz-service.quizhub.svc.cluster.local",
+              "Port": 80
+            }
+          ],
+          "UpstreamPathTemplate": "/api/quizzes/{everything}",
+          "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+          "AuthenticationOptions": {
+            "AuthenticationProviderKey": "JwtBearer",
+            "AllowedScopes": []
+          }
+        },
+        {
+          "DownstreamPathTemplate": "/api/results/{everything}",
+          "DownstreamScheme": "http",
+          "DownstreamHostAndPorts": [
+            {
+              "Host": "result-service.quizhub.svc.cluster.local",
+              "Port": 80
+            }
+          ],
+          "UpstreamPathTemplate": "/api/results/{everything}",
+          "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+          "AuthenticationOptions": {
+            "AuthenticationProviderKey": "JwtBearer",
+            "AllowedScopes": []
+          }
+        }
+      ],
+      "GlobalConfiguration": {
+        "BaseUrl": "http://gateway.quizhub.svc.cluster.local",
+        "CorsPolicy": {
+          "AllowMethods": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+          "AllowHeaders": [ "Authorization", "Content-Type", "Accept" ],
+          "AllowCredentials": true,
+          "AllowAnyOrigin": true
+        }
+      }
+    }

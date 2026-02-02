@@ -7,6 +7,8 @@ A modern quiz application built with microservices architecture, featuring a Rea
 ## Table of Contents
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
+  - [Docker Compose Deployment](#docker-compose-deployment)
+  - [Kubernetes Deployment](#kubernetes-deployment-new)
 - [Architecture](#architecture)
 - [Development Setup](#development-setup)
 - [Build Instructions](#build-instructions)
@@ -17,14 +19,21 @@ A modern quiz application built with microservices architecture, featuring a Rea
 
 ## Prerequisites
 
+### For Docker Compose Deployment
 - **Docker & Docker Compose** (for containerized deployment)
 - **.NET 8.0 SDK** (for local development)
 - **Node.js 18+** and **npm** (for frontend development)
 - **SQL Server** (for local database development)
 
+### For Kubernetes Deployment
+- **Minikube** v1.30+ (local Kubernetes cluster)
+- **kubectl** v1.28+ (Kubernetes CLI)
+- **Docker** v20.10+
+- **System Requirements:** 6+ CPU cores, 16GB RAM, 60GB disk space
+
 ## Quick Start
 
-### Docker Deployment (Recommended)
+### Docker Compose Deployment
 
 ```bash
 # Clone the repository
@@ -38,6 +47,34 @@ docker-compose up --build
 # Frontend: http://localhost:3000
 # API Gateway: http://localhost:5004
 ```
+
+### Kubernetes Deployment (NEW!)
+
+**For Bachelor's Thesis: Full observability implementation with ELK Stack + Prometheus**
+
+```bash
+# Quick automated setup (5-7 minutes)
+cd k8s/scripts
+./setup-all.sh
+
+# Add to /etc/hosts
+echo "$(minikube ip) quizhub.local" | sudo tee -a /etc/hosts
+
+# Access the application
+# Frontend: http://quizhub.local
+# API Gateway: http://quizhub.local/api
+```
+
+📚 **Full Kubernetes documentation:** See [k8s/README.md](k8s/README.md)
+
+**Features:**
+- ✅ Full Kubernetes orchestration with Minikube
+- ✅ Centralized logging with ELK Stack (Elasticsearch, Kibana, Filebeat)
+- ✅ Metrics collection with Prometheus
+- ✅ Visualization with Grafana
+- ✅ Horizontal Pod Autoscaling
+- ✅ Health checks and self-healing
+- ✅ Persistent storage for databases
 
 ## Architecture
 
